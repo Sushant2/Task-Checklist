@@ -246,6 +246,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 else
                     suffix = "th";
                 tempQ = null;
+                // if(orderSave.get(i) == 0){
+                //     //handle if task starting with "" or has , init
+                // }
                 if(orderSave.get(i) == 1){
                     if(columns[orderSave.indexOf(1)].equals("")){
                         analyseSummary.add("Note: Empty value for 'Responsibilty Area(s)' in " + lineCount + suffix + " row!");
@@ -585,7 +588,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     stID=rs.getString("ST_ID");
                 else if("All".equals(storeNames))
                     stID="666";
-            }sh restartRedisServer.sh run
+            }
             String groupType = null;
             if(Character.isDigit(columns[orderSave.indexOf(4)].charAt(0)))
                 groupType = "";
