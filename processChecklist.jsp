@@ -232,10 +232,10 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 continue;
             }   
             System.out.println("Line : " + line);
-            System.out.println("Order : " + orderSave);
             String[] columns = mySplit(line, ',');
             int i = 0;
             String suffix = "";
+            PreparedStatement tempQ = null;
             while(i<orderSave.size()){
                 if(lineCount % 10 == 1)
                     suffix = "st";
@@ -245,8 +245,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     suffix = "rd";
                 else
                     suffix = "th";
-                PreparedStatement tempQ = null;
-                System.out.println("CURRENT NO :" + orderSave.get(i));
+                tempQ = null;
                 if(orderSave.get(i) == 1){
                     if(columns[orderSave.indexOf(1)].equals("")){
                         analyseSummary.add("Note: Empty value for 'Responsibilty Area(s)' in " + lineCount + suffix + " row!");
@@ -341,14 +340,14 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     }
                 }
                 else if(orderSave.get(i) == 4){
-                    if(columns[orderSave.indexOf(4)].equals("")){
+                    String phase = columns[orderSave.indexOf(4)];
+                    if(phase.equals("")){
                         analyseSummary.add("Note: Empty value for 'Group' in " + lineCount + suffix + " row!");
                     }
-                    else if(Character.isDigit(columns[orderSave.indexOf(4)].charAt(0))){
-                        System.out.println(">>>>DIGIT");
+                    else if(Character.isDigit(phase.charAt(0))){
+                        analyseSummary.add("'" + phase + "' not found in 'Group', Please correct it!");
                     }
                     else{
-                        String phase = columns[orderSave.indexOf(4)];
                         String que = "SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME = ?";
                         String[] queryParams = { phase };
                         ResultSet rs = QueryUtil.getResult(que, queryParams);
@@ -371,10 +370,10 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     }
                 }
                 else if(orderSave.get(i) == 5){
-                    if(columns[orderSave.indexOf(5)].equals("")){
+                    String franAccess = columns[orderSave.indexOf(5)];
+                    if(franAccess.equals("")){
                         analyseSummary.add("Note: Empty value for 'Franchisee Access' in " + lineCount + suffix + " row, Hence default value 'Update Status' will be added.");
                     }else{
-                        String franAccess = columns[orderSave.indexOf(5)];
                         String que = "SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE = ?";
                         String[] queParams = { franAccess };
                         ResultSet rs = QueryUtil.getResult(que, queParams);
@@ -397,10 +396,10 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     }
                 }
                 else if(orderSave.get(i) ==6){
-                    if(columns[orderSave.indexOf(6)].equals("")){
+                    String priority = columns[orderSave.indexOf(6)];
+                    if(priority.equals("")){
                         analyseSummary.add("Note: Empty value for 'Priority' in " + lineCount + suffix + " row, Hence default value 'Recommended' will be added.");
                     }else{
-                        String priority = columns[orderSave.indexOf(6)];
                         String que = "SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY = ?";
                         String[] queParams = { priority };
                         ResultSet rs = QueryUtil.getResult(que, queParams);
@@ -423,11 +422,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     }
                 }
                 else if(orderSave.get(i) ==7){
-                    if(columns[orderSave.indexOf(7)].equals("")){
+                    String criLevel = columns[orderSave.indexOf(7)];
+                    if(criLevel.equals("")){
                         analyseSummary.add("Note: Empty value for 'Critical Level' in " + lineCount + suffix + " row, Hence default value 'System Item' will be added.");
                     }
                     else {
-                        String criLevel = columns[orderSave.indexOf(7)];
                         String que = "SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='130320' AND DATA_VALUE = ?";
                         String[] queParams = { criLevel };
                         ResultSet rs = QueryUtil.getResult(que, queParams);
@@ -491,56 +490,60 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         refParent = "TASK_CHECKLIST";
                         if(refField.equals("")){
                             analyseSummary.add("Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!");
-                            break;
                         }
-                        String que = "SELECT TASK_ID FROM SM_TASK_CHECKLIST WHERE TASK LIKE '%" + refField + "%'";
-                        ResultSet rs = QueryUtil.getResult(que, null);
-                        if(rs.next())
-                            refField = rs.getString("TASK_ID");
+                        else{
+                            String que = "SELECT TASK_ID FROM SM_TASK_CHECKLIST WHERE TASK LIKE '%" + refField + "%'";
+                            ResultSet rs = QueryUtil.getResult(que, null);
+                            if(rs.next())
+                                refField = rs.getString("TASK_ID");
+                        }
                     }
                     else if(refParent.indexOf("Equipment") != -1){
                         refParent = "EQUIPMENT_CHECKLIST";
                         if(refField.equals("")){
                             analyseSummary.add("Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!");
-                            break;
+                        }else{
+                            String que = "SELECT EQUIPMENT_ID FROM SM_EQUIPMENT_CHECKLIST WHERE EQUIPMENT_NAME LIKE '%" + refField + "%'";
+                            ResultSet rs = QueryUtil.getResult(que, null);
+                            if(rs.next())
+                                refField = rs.getString("EQUIPMENT_ID");
                         }
-                        String que = "SELECT EQUIPMENT_ID FROM SM_EQUIPMENT_CHECKLIST WHERE EQUIPMENT_NAME LIKE '%" + refField + "%'";
-                        ResultSet rs = QueryUtil.getResult(que, null);
-                        if(rs.next())
-                            refField = rs.getString("EQUIPMENT_ID");
                     }
                     else if(refParent.indexOf("Document") != -1){
                         refParent = "DOCUMENT_CHECKLIST";
                         if(refField.equals("")){
                             analyseSummary.add("Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!");
-                            break;
                         }
-                        String que = "SELECT DOCUMENT_ID FROM SM_DOCUMENT_CHECKLIST WHERE DOCUMENT_NAME LIKE '%" + refField + "%'";
-                        ResultSet rs = QueryUtil.getResult(que, null);
-                        if(rs.next())
-                            refField = rs.getString("DOCUMENT_ID");
+                        else{
+                            String que = "SELECT DOCUMENT_ID FROM SM_DOCUMENT_CHECKLIST WHERE DOCUMENT_NAME LIKE '%" + refField + "%'";
+                            ResultSet rs = QueryUtil.getResult(que, null);
+                            if(rs.next())
+                                refField = rs.getString("DOCUMENT_ID");
+                        }
                     }
                     else if(refParent.indexOf("Picture") != -1){
                         refParent = "PICTURE_CHECKLIST";
                         if(refField.equals("")){
                             analyseSummary.add("Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!");
-                            break;
                         }
-                        String que = "SELECT PICTURE_ID FROM SM_PICTURE_CHECKLIST WHERE TITLE LIKE '%" + refField + "%'";
-                        ResultSet rs = QueryUtil.getResult(que, null);
-                        if(rs.next())
-                            refField = rs.getString("PICTURE_ID");
+                        else{
+                            String que = "SELECT PICTURE_ID FROM SM_PICTURE_CHECKLIST WHERE TITLE LIKE '%" + refField + "%'";
+                            ResultSet rs = QueryUtil.getResult(que, null);
+                            if(rs.next())
+                                refField = rs.getString("PICTURE_ID");
+                        }
                     }
                     else if(refParent.indexOf("Secondary") != -1){
                         refParent = "SECONDRY_CHECKLIST";
                         if(refField.equals("")){
                             analyseSummary.add("Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!");
-                            break;
                         }
-                        String que = "SELECT ITEM_ID FROM SM_SECONDRY_CHECKLIST WHERE ITEM_NAME LIKE '%" + refField + "%'";
-                        ResultSet rs = QueryUtil.getResult(que, null);
-                        if(rs.next())
-                            refField = rs.getString("ITEM_ID");
+                        else{
+                            String que = "SELECT ITEM_ID FROM SM_SECONDRY_CHECKLIST WHERE ITEM_NAME LIKE '%" + refField + "%'";
+                            ResultSet rs = QueryUtil.getResult(que, null);
+                            if(rs.next())
+                                refField = rs.getString("ITEM_ID");
+                        }
                     }
                     else {
                         refParent = null;
@@ -582,9 +585,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     stID=rs.getString("ST_ID");
                 else if("All".equals(storeNames))
                     stID="666";
-            }
+            }sh restartRedisServer.sh run
             String groupType = null;
-            if(!columns[orderSave.indexOf(4)].equals(""))
+            if(Character.isDigit(columns[orderSave.indexOf(4)].charAt(0)))
+                groupType = "";
+            else if(!columns[orderSave.indexOf(4)].equals(""))
                 groupType = row[orderSave.indexOf(4)];
             String franAccess = row[orderSave.indexOf(5)];
             if(franAccess.equals(""))
