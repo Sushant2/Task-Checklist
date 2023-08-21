@@ -253,17 +253,6 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 else
                     suffix = "th";
                 tempQ = null;
-                // if(orderSave.get(i) == 0){
-                //     //handle if task starting with ""
-                //     String task = columns[orderSave.indexOf(0)];
-                //     System.out.println("TASKKK " + task);
-                //     if (task.charAt(0) == '\"' && task.charAt(1) == '\"') {
-                //         if (task.charAt(task.length() - 1) == '\"' && task.charAt(task.length() - 2) == '\"') {
-                //             columns[orderSave.indexOf(0)] = task.substring(2, task.length() - 2);
-                //         }
-                //         System.out.println("TASKKK " + columns[orderSave.indexOf(0)]);
-                //     }
-                // }
                 if(orderSave.get(i) == 1){
                     if(columns[orderSave.indexOf(1)].equals("")){
                         analyseSummary.add("Note: Empty value for 'Responsibilty Area(s)' in " + lineCount + suffix + " row!");
@@ -418,7 +407,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         }
                     }
                 }
-                else if(orderSave.get(i) ==6){
+                else if(orderSave.get(i) == 6){
                     String priority = columns[orderSave.indexOf(6)];
                     if(priority.equals("")){
                         analyseSummary.add("Note: Empty value for 'Priority' in " + lineCount + suffix + " row, Hence default value 'Recommended' will be added.");
@@ -445,7 +434,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         }
                     }
                 }
-                else if(orderSave.get(i) ==7){
+                else if(orderSave.get(i) == 7){
                     String criLevel = columns[orderSave.indexOf(7)];
                     if(criLevel.equals("")){
                         analyseSummary.add("Note: Empty value for 'Critical Level' in " + lineCount + suffix + " row, Hence default value 'System Item' will be added.");
@@ -674,18 +663,24 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     analyseSummary.add("Note: Schedule Completion should be greater than Schedule Start in " + lineCount + suffix + " row!");
                 }
             }
-            String startRem = row[orderSave.indexOf(16)];
-            String completionRem = row[orderSave.indexOf(17)];
-            if(!startRem.equals("") && !completionRem.equals("")){
-                if(Integer.parseInt(startRem) < Integer.parseInt(completionRem)){
-                    analyseSummary.add("Note: Reminder Schedule Completion should be greater than Reminder Schedule Start in " + lineCount + suffix + " row!");
+            String startRem = null, completionRem = null;
+            if(orderSave.size()>16){
+                startRem = row[orderSave.indexOf(16)];
+                completionRem = row[orderSave.indexOf(17)];
+                if(!startRem.equals("") && !completionRem.equals("")){
+                    if(Integer.parseInt(startRem) < Integer.parseInt(completionRem)){
+                        analyseSummary.add("Note: Reminder Schedule Completion should be greater than Reminder Schedule Start in " + lineCount + suffix + " row!");
+                    }
                 }
             }
             String webUrl = null;
             if(orderSave.indexOf(18) != -1){
                 webUrl = row[orderSave.indexOf(18)];
             }
-            if(orderSave.indexOf(18) != -1){
+            if(orderSave.size() == 16 && orderSave.indexOf(15) != -1){
+                pst = con.prepareStatement("INSERT INTO SM_TASK_CHECKLIST (TASK, TASK_ID, RESPONSIBILITY_AREA, CONTACT, ST_ID, GROUP_ID, FRANCHISEE_ACCESS, PRIORITY_ID, CRITICAL_LEVEL_ID, REFERENCE_PARENT, REFERENCE_FLAG, REFERENCE_FIELD, DEPENDENCY_FLAG, START_DATE, START_FLAG, SCHEDULE_DATE, SCHEDULE_FLAG) VALUES (?, NULL, (SELECT GROUP_CONCAT(RESPONSIBILITY_AREA_ID) FROM SM_RESPONSIBILITY_AREA WHERE RESPONSIBILITY_AREA IN ('" + resArea + "')), (SELECT GROUP_CONCAT(CONTACT_INFO) FROM (SELECT USER_NO AS CONTACT_INFO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN ('" + contacts + "') UNION SELECT SUPPLIER_NO AS CONTACT_INFO FROM SUPPLIERS WHERE SUPPLIER_NAME IN ('" + contacts + "') UNION SELECT CONCAT('-', FIELD_ID, 'S') AS CONTACT_INFO FROM FIM_CONTACT_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN ('" + contacts + "')) AS CONTACT),("+stID+"),(SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME IN ('" + groupType + "')), (SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE IN ('" + franAccess + "')), (SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY IN ('" + priority + "')), (SELECT PARENT_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='130320' AND DATA_VALUE IN ('" + criLevel + "')), '" + refParent + "', '"+refFlag+"', '" + refField + "', '"+depFlag+"' ,"+startDate+",('"+startFlag+"'),"+scheduleDate+",('"+scheduleFlag+"'))");
+            }
+            else if(orderSave.indexOf(18) != -1){
                 pst = con.prepareStatement("INSERT INTO SM_TASK_CHECKLIST (TASK, TASK_ID, RESPONSIBILITY_AREA, CONTACT, ST_ID, GROUP_ID, FRANCHISEE_ACCESS, PRIORITY_ID, CRITICAL_LEVEL_ID, REFERENCE_PARENT, REFERENCE_FLAG, REFERENCE_FIELD, DEPENDENCY_FLAG, START_DATE, START_FLAG, SCHEDULE_DATE, SCHEDULE_FLAG, START_ALERT_DATE, ALERT_DATE, WEB_URL_LINK) VALUES (?, NULL, (SELECT GROUP_CONCAT(RESPONSIBILITY_AREA_ID) FROM SM_RESPONSIBILITY_AREA WHERE RESPONSIBILITY_AREA IN ('" + resArea + "')), (SELECT GROUP_CONCAT(CONTACT_INFO) FROM (SELECT USER_NO AS CONTACT_INFO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN ('" + contacts + "') UNION SELECT SUPPLIER_NO AS CONTACT_INFO FROM SUPPLIERS WHERE SUPPLIER_NAME IN ('" + contacts + "') UNION SELECT CONCAT('-', FIELD_ID, 'S') AS CONTACT_INFO FROM FIM_CONTACT_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN ('" + contacts + "')) AS CONTACT),("+stID+"),(SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME IN ('" + groupType + "')), (SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE IN ('" + franAccess + "')), (SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY IN ('" + priority + "')), (SELECT PARENT_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='130320' AND DATA_VALUE IN ('" + criLevel + "')), '" + refParent + "', '"+refFlag+"', '" + refField + "', '"+depFlag+"' ,"+startDate+",('"+startFlag+"'),"+scheduleDate+",('"+scheduleFlag+"'), "+startRem+", "+completionRem+", '"+webUrl+"')");
             }
             else{
