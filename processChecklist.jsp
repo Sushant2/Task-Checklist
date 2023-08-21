@@ -129,8 +129,43 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
         List<String> modifiedCell = new ArrayList<>();
         int i = 0;
         while(i<cells.length){
-            if(cells[i].length() > 0 && '\"' == cells[i].charAt(0) && '\"' != cells[i].charAt(1)){
-                String newCell = null;
+            String newCell = null;
+            //handle if cell has multiple/3 double quotes in starting & end
+            if (cells[i].length() > 0 && "\"\"\"".equals(cells[i].substring(0, Math.min(3, cells[i].length())))){
+                //if the same cell is also the last cell ending with multiple/3 quotes
+                if("\"\"\"".equals(cells[i].substring(cells[i].length()-3, cells[i].length()))){
+                    newCell = cells[i].substring(3, cells[i].length()-3);
+                    i++;
+                }
+                //if the same cell is starting with 3 double quotes & ending with only one double quote
+                else if('\"'== (cells[i].charAt(cells[i].length()-1)) && '\"' != cells[i].charAt(cells[i].length()-2)){
+                    newCell = cells[i].substring(3, cells[i].length()-1);
+                    i++;
+                }
+                else{
+                    newCell = cells[i].substring(3, cells[i].length());
+                    i++; 
+                    while(i<cells.length){
+                        if("\"\"\"".equals(cells[i].substring(cells[i].length()-3, cells[i].length()))){
+                            newCell += "," + cells[i].substring(0, cells[i].length()-3);
+                            i++;
+                            break;
+                        }
+                        else if('\"' == (cells[i].charAt(cells[i].length()-1)) && '\"' != cells[i].charAt(cells[i].length()-2)){
+                            newCell += "," + cells[i].substring(0, cells[i].length()-1);
+                            i++;
+                            break;
+                        } 
+                        else
+                            newCell += "," + cells[i].substring(0, cells[i].length());
+                        i++;
+                    }
+                }
+                modifiedCell.add(newCell);
+            }
+            //handles if a cell has multiple values separated using comma
+            else if(cells[i].length() > 0 && '\"' == cells[i].charAt(0) && '\"' != cells[i].charAt(1)){
+                newCell = null;
                 newCell = cells[i].substring(1, cells[i].length())+",";
                 i++;
                 while(i<cells.length){
