@@ -3,16 +3,16 @@
 <%@ page import="java.io.File"%>
 <%@ page import="java.io.FileWriter"%>
 <%@ page import="java.io.IOException"%>
-<%@ page import="java.util.List" %>
-<%@ page import="java.lang.Math" %>
-<%@ page import="java.util.StringTokenizer" %>
+<%@ page import="java.util.List"%>
+<%@ page import="java.lang.Math"%>
+<%@ page import="java.util.StringTokenizer"%>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="java.sql.PreparedStatement" %>
-<%@ page import="org.apache.commons.fileupload.*" %>
-<%@ page import="org.apache.commons.fileupload.disk.*" %>
-<%@ page import="org.apache.commons.fileupload.servlet.*" %>
-<%@page import="com.appnetix.app.util.sqlqueries.ResultSet"%>
-<%@page import="com.appnetix.app.util.QueryUtil"%>
+<%@ page import="java.sql.PreparedStatement"%>
+<%@ page import="org.apache.commons.fileupload.*"%>
+<%@ page import="org.apache.commons.fileupload.disk.*"%>
+<%@ page import="org.apache.commons.fileupload.servlet.*"%>
+<%@ page import="com.appnetix.app.util.sqlqueries.ResultSet"%>
+<%@ page import="com.appnetix.app.util.QueryUtil"%>
 
 <html>
     <head>
@@ -157,6 +157,13 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
         }
         return modifiedCell.toArray(new String[modifiedCell.size()]);
     }
+    public static String UpIfLower(String str) {
+        char[] strArr = str.toCharArray();
+        if (strArr[0] >= 'a' && strArr[0] <= 'z')
+            strArr[0] = (char) (strArr[0] - ('a' - 'A'));
+
+        return String.valueOf(strArr);
+    }
     %>
     <% Connection con = null;
     PreparedStatement pst = null; 
@@ -247,7 +254,15 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     suffix = "th";
                 tempQ = null;
                 // if(orderSave.get(i) == 0){
-                //     //handle if task starting with "" or has , init
+                //     //handle if task starting with ""
+                //     String task = columns[orderSave.indexOf(0)];
+                //     System.out.println("TASKKK " + task);
+                //     if (task.charAt(0) == '\"' && task.charAt(1) == '\"') {
+                //         if (task.charAt(task.length() - 1) == '\"' && task.charAt(task.length() - 2) == '\"') {
+                //             columns[orderSave.indexOf(0)] = task.substring(2, task.length() - 2);
+                //         }
+                //         System.out.println("TASKKK " + columns[orderSave.indexOf(0)]);
+                //     }
                 // }
                 if(orderSave.get(i) == 1){
                     if(columns[orderSave.indexOf(1)].equals("")){
@@ -256,6 +271,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     else{
                         String[] cols = columns[orderSave.indexOf(1)].split(",");
                         for(String col : cols){
+                            col = UpIfLower(col);
                             String query = "SELECT RESPONSIBILITY_AREA_ID FROM SM_RESPONSIBILITY_AREA WHERE RESPONSIBILITY_AREA = ?";
                             String[] queryParams = { col };
                             ResultSet rs = QueryUtil.getResult(query, queryParams);
@@ -287,6 +303,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     else{
                         String[] cols = columns[orderSave.indexOf(2)].split(",");
                         for(String col : cols){
+                            col = UpIfLower(col);
                             String que1 = "SELECT USER_NO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN (?)";
                             String que2 = "SELECT SUPPLIER_NO FROM SUPPLIERS WHERE SUPPLIER_NAME IN (?)";
                             String que3 = "SELECT CONCAT('-', FIELD_ID, 'S') FROM FIM_CONTACT_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN (?)";
@@ -320,6 +337,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     else{
                         String[] cols = columns[orderSave.indexOf(3)].split(",");
                         for(String col : cols){
+                            col = UpIfLower(col);
                             String que = "SELECT ST_ID FROM STORE_TYPE WHERE ST_NAME IN (?)";
                             String[] queryParams = { col };
                             ResultSet rs = QueryUtil.getResult(que, queryParams);
@@ -351,6 +369,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         analyseSummary.add("'" + phase + "' not found in 'Group', Please correct it!");
                     }
                     else{
+                        phase = UpIfLower(phase);
                         String que = "SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME = ?";
                         String[] queryParams = { phase };
                         ResultSet rs = QueryUtil.getResult(que, queryParams);
@@ -377,6 +396,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     if(franAccess.equals("")){
                         analyseSummary.add("Note: Empty value for 'Franchisee Access' in " + lineCount + suffix + " row, Hence default value 'Update Status' will be added.");
                     }else{
+                        franAccess = UpIfLower(franAccess);
                         String que = "SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE = ?";
                         String[] queParams = { franAccess };
                         ResultSet rs = QueryUtil.getResult(que, queParams);
@@ -403,6 +423,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     if(priority.equals("")){
                         analyseSummary.add("Note: Empty value for 'Priority' in " + lineCount + suffix + " row, Hence default value 'Recommended' will be added.");
                     }else{
+                        priority = UpIfLower(priority);
                         String que = "SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY = ?";
                         String[] queParams = { priority };
                         ResultSet rs = QueryUtil.getResult(que, queParams);
@@ -430,6 +451,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         analyseSummary.add("Note: Empty value for 'Critical Level' in " + lineCount + suffix + " row, Hence default value 'System Item' will be added.");
                     }
                     else {
+                        criLevel = UpIfLower(criLevel);
                         String que = "SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='130320' AND DATA_VALUE = ?";
                         String[] queParams = { criLevel };
                         ResultSet rs = QueryUtil.getResult(que, queParams);
@@ -458,6 +480,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         analyseSummary.add("Note: Empty value for 'Dependent On' in " + lineCount + suffix + " row, Please mention it!");
                     }
                     else if (refParent.indexOf("Project") != -1) {
+                        refParent = UpIfLower(refParent);
                         String que = "SELECT FIELD_ID FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN (?)";
                         String[] queParams = { refParent };
                         ResultSet rs = QueryUtil.getResult(que, queParams);
@@ -485,11 +508,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             refParent = null;
                         }
                     }
-                    else if(refParent.indexOf("Multiple") != -1){
+                    else if(refParent.indexOf("Multiple") != -1 && refParent.equalsIgnoreCase("Multiple Checklist")){
                         refParent = "MULTIPLE_CHECKLIST";
                         refField = "";
                     }
-                    else if(refParent.indexOf("Task") != -1){
+                    else if(refParent.indexOf("Task") != -1 && refParent.equalsIgnoreCase("Task Checklist")){
                         refParent = "TASK_CHECKLIST";
                         if(refField.equals("")){
                             analyseSummary.add("Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!");
@@ -501,7 +524,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 refField = rs.getString("TASK_ID");
                         }
                     }
-                    else if(refParent.indexOf("Equipment") != -1){
+                    else if(refParent.indexOf("Equipment") != -1 && refParent.equalsIgnoreCase("Equipment Checklist")){
                         refParent = "EQUIPMENT_CHECKLIST";
                         if(refField.equals("")){
                             analyseSummary.add("Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!");
@@ -512,7 +535,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 refField = rs.getString("EQUIPMENT_ID");
                         }
                     }
-                    else if(refParent.indexOf("Document") != -1){
+                    else if(refParent.indexOf("Document") != -1 && refParent.equalsIgnoreCase("Document Checklist")){
                         refParent = "DOCUMENT_CHECKLIST";
                         if(refField.equals("")){
                             analyseSummary.add("Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!");
@@ -524,7 +547,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 refField = rs.getString("DOCUMENT_ID");
                         }
                     }
-                    else if(refParent.indexOf("Picture") != -1){
+                    else if(refParent.indexOf("Picture") != -1 && refParent.equalsIgnoreCase("Picture Checklist")){
                         refParent = "PICTURE_CHECKLIST";
                         if(refField.equals("")){
                             analyseSummary.add("Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!");
@@ -536,7 +559,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 refField = rs.getString("PICTURE_ID");
                         }
                     }
-                    else if(refParent.indexOf("Secondary") != -1){
+                    else if(refParent.indexOf("Secondary") != -1 && refParent.equalsIgnoreCase("Secondary Checklist")){
                         refParent = "SECONDRY_CHECKLIST";
                         if(refField.equals("")){
                             analyseSummary.add("Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!");
