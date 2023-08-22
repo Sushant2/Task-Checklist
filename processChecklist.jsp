@@ -99,7 +99,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             padding: 2px 5px;
-            background-color: rgb(236, 90, 90);
+            background-color: rgb(214, 146, 43);
             color: white;
             border-radius: 3px;
             font-size: 12px;
@@ -850,10 +850,24 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             System.out.println("FINAL QUERY:" + pst.toString());
             // pst.executeUpdate();
     }
+    // Displaying analysis
     if(action.equals("analyse")){
         for (Map.Entry<Integer, HashSet<String>> entry : analyseSum.entrySet()) {
             int key = entry.getKey();
             HashSet<String> sumSet = entry.getValue();
+            int countEmpty = 0, schComp = 0, remSchComp = 0;
+            boolean onceEmpty = false, onceComp = false, onceSchComp = false;
+            if (!sumSet.isEmpty()) {
+                for (String str : sumSet) {
+                    if (str.indexOf("Empty value for") != -1) {
+                        countEmpty++;
+                    } else if (str.indexOf("Schedule Completion should be greater") != -1) {
+                        schComp++;
+                    } else if (str.indexOf("Reminder Schedule Completion should be greater") != -1) {
+                        remSchComp++;
+                    }
+                }
+            }
             if(!sumSet.isEmpty()){
                 %>
                 <div class="key" onclick="toggleStrings(this)">
@@ -862,8 +876,31 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 </div>
                 <div class="strings">
                     <ol>
-                    <% for (String str : sumSet) { %>
-                        <li><%= str %></li>
+                    <% for (String str : sumSet) {
+                        if(countEmpty > 3 && !onceEmpty){
+                            onceEmpty = true;
+                            %>
+                            <li>Note: Multiple empty values present in '<%= orderInfoMap.get(key) %>'.</li>
+                            <%
+                        }else if(schComp > 3 && !onceComp){
+                            onceComp = true;
+                            %>
+                            <li>Note: Schedule Completion should be greater than Schedule Start in '<%= orderInfoMap.get(key) %>'.</li>
+                            <%
+                        }else if(remSchComp > 3 && !onceSchComp){
+                            onceSchComp = true;
+                            %>
+                            <li>Note: Reminder Schedule Completion should be greater than Reminder Schedule Start in '<%= orderInfoMap.get(key) %>'.</li>
+                            <%
+                        }else if(onceEmpty || onceComp || onceSchComp){
+                            //do nothing - skip
+                        }
+                        else{
+                            %>
+                            <li><%= str %></li>
+                            <%
+                        }
+                        %>
                     <% } %>
                     </ol>
                 </div>
