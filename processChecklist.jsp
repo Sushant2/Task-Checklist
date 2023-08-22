@@ -258,6 +258,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             "Task", "Responsibility Area(s)", "Contact(s)", "Applicable To Store Type(s)", "Group", "Franchisee Access", "Priority", "Critical Level", "Dependent On", "Timing trigger for task", "Other Checklist task on which this task is dependent", "Initialize Dependency", "SCHEDULE_START", "SCHEDULE_START_D", "SCHEDULE_COMPLETION", "SCHEDULE_COMPLETION_D", "START_ALERT_DATE", "ALERT_DATE", "WEB_URL_LINK"
         ));
         HashMap<Integer, HashSet<String>> analyseSum = new HashMap<>();
+        HashSet<String> sqlQuery = new HashSet<>();
         //initializing hashmap
         for(int i = 0;i<=18;i++)
             analyseSum.put(i, new HashSet<>());
@@ -372,8 +373,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 String queStr = tempQ.toString();
                                 String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
                                 if(action.equals("generateTaskSQL")){
-                                    bufferedWriter.write(finalQueStr+";");
-                                    bufferedWriter.newLine();
+                                    if(!sqlQuery.contains(col)){
+                                        bufferedWriter.write(finalQueStr+";");
+                                        bufferedWriter.newLine();
+                                    }
+                                    sqlQuery.add(col);
                                 }
                                 // QueryUtil.update(q, qParams);
                             }
@@ -409,8 +413,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 String queStr = tempQ.toString();
                                 String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
                                 if(action.equals("generateTaskSQL")){
-                                    bufferedWriter.write(finalQueStr+";");
-                                    bufferedWriter.newLine();
+                                    if(!sqlQuery.contains(col)){
+                                        bufferedWriter.write(finalQueStr+";");
+                                        bufferedWriter.newLine();
+                                    }
+                                    sqlQuery.add(col);
                                 }
                                 // QueryUtil.update(q, qParams);
                             }
@@ -442,8 +449,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 String queStr = tempQ.toString();
                                 String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
                                 if(action.equals("generateTaskSQL")){
-                                    bufferedWriter.write(finalQueStr+";");
-                                    bufferedWriter.newLine();
+                                    if(!sqlQuery.contains(col)){
+                                        bufferedWriter.write(finalQueStr+";");
+                                        bufferedWriter.newLine();
+                                    }
+                                    sqlQuery.add(col);
                                 }
                                 // QueryUtil.update(q, qParams);
                             }
@@ -479,8 +489,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             String queStr = tempQ.toString();
                             String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
                             if(action.equals("generateTaskSQL")){
-                                bufferedWriter.write(finalQueStr+";");
-                                bufferedWriter.newLine();
+                                if(!sqlQuery.contains(phase)){
+                                    bufferedWriter.write(finalQueStr+";");
+                                    bufferedWriter.newLine();
+                                }
+                                sqlQuery.add(phase);
                             }
                             // QueryUtil.update(q, qParams);
                         }
@@ -509,8 +522,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             String queStr = tempQ.toString();
                             String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
                             if(action.equals("generateTaskSQL")){
-                                bufferedWriter.write(finalQueStr+";");
-                                bufferedWriter.newLine();
+                                if(!sqlQuery.contains(franAccess)){
+                                    bufferedWriter.write(finalQueStr+";");
+                                    bufferedWriter.newLine();
+                                }
+                                sqlQuery.add(franAccess);
                             }
                             // QueryUtil.update(q, qParams);
                         }
@@ -539,8 +555,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             String queStr = tempQ.toString();
                             String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
                             if(action.equals("generateTaskSQL")){
-                                bufferedWriter.write(finalQueStr+";");
-                                bufferedWriter.newLine();
+                                if(!sqlQuery.contains(priority)){
+                                    bufferedWriter.write(finalQueStr+";");
+                                    bufferedWriter.newLine();
+                                }
+                                sqlQuery.add(priority);
                             }
                             // QueryUtil.update(q, qParams);
                         }
@@ -570,8 +589,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             String queStr = tempQ.toString();
                             String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
                             if(action.equals("generateTaskSQL")){
-                                bufferedWriter.write(finalQueStr+";");
-                                bufferedWriter.newLine();
+                                if(!sqlQuery.contains(criLevel)){
+                                    bufferedWriter.write(finalQueStr+";");
+                                    bufferedWriter.newLine();
+                                }
+                                sqlQuery.add(criLevel);
                             }
                             // QueryUtil.update(q, qParams);
                         }
@@ -602,8 +624,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             String queStr = tempQ.toString();
                             String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
                             if(action.equals("generateTaskSQL")){
-                                bufferedWriter.write(finalQueStr+";");
-                                bufferedWriter.newLine();
+                                if(!sqlQuery.contains(refParent)){
+                                    bufferedWriter.write(finalQueStr+";");
+                                    bufferedWriter.newLine();
+                                }
+                                sqlQuery.add(refParent);
                             }
                             // QueryUtil.update(q, qParams);
                         }
