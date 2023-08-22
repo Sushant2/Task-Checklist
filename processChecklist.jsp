@@ -1,4 +1,4 @@
-<%@ page import="java.io.*, java.sql.*" %>
+<%@ page import="java.io.*, java.util.*, java.sql.*"%>
 <%@ page import="java.io.BufferedWriter"%>
 <%@ page import="java.io.File"%>
 <%@ page import="java.io.FileWriter"%>
@@ -17,10 +17,12 @@
 <html>
     <head>
         <title>Task Checklist Automation</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             margin: 2%;
+            background-color: #f5f5f5;
         }
         .headA{
             background-color: rgb(214, 146, 43);
@@ -60,6 +62,52 @@
         li:hover {
             background-color: #f0f0f0;
             cursor: pointer;
+        }
+        .key {
+            position: relative;
+            cursor: pointer;
+            padding: 10px;
+            background-color: #f2f2f2;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .key p {
+            margin: 0;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+        }
+        .strings {
+            display: none;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+            margin-bottom: 10px;
+        }
+        .show {
+            display: block;
+        }
+        .headInfo {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .tooltip {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 2px 5px;
+            background-color: rgb(236, 90, 90);
+            color: white;
+            border-radius: 3px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .key:hover .tooltip {
+            opacity: 1;
         }
 
     </style>
@@ -203,7 +251,16 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
     <% Connection con = null;
     PreparedStatement pst = null; 
     try {
-        ArrayList<String> analyseSummary = new ArrayList<String>();
+        /* 
+        TASK = 0 RES AREA = 1 CONTACT = 2 STORE = 3 GROUP = 4 FRANCHISEE = 5 PRIORITY = 6 CRITICAL = 7 DEP ON = 8 TIMING = 9 OTHER CHECKLIST = 10 INIT DEP = 11 SCHEDULE_START = 12 SCHEDULE_START_D = 13 SCHEDULE_COMPLETION = 14 SCHEDULE_COMPLETION_D = 15 START_ALERT_DATE = 16 ALERT_DATE = 17 WEB_URL_LINK=18 
+        */
+        ArrayList<String> orderInfoMap = new ArrayList<>(Arrays.asList(
+            "Task", "Responsibility Area(s)", "Contact(s)", "Applicable To Store Type(s)", "Group", "Franchisee Access", "Priority", "Critical Level", "Dependent On", "Timing trigger for task", "Other Checklist task on which this task is dependent", "Initialize Dependency", "SCHEDULE_START", "SCHEDULE_START_D", "SCHEDULE_COMPLETION", "SCHEDULE_COMPLETION_D", "START_ALERT_DATE", "ALERT_DATE", "WEB_URL_LINK"
+        ));
+        HashMap<Integer, HashSet<String>> analyseSum = new HashMap<>();
+        //initializing hashmap
+        for(int i = 0;i<=18;i++)
+            analyseSum.put(i, new HashSet<>());
         StringBuilder contents = new StringBuilder();
         List<String[]> data = new ArrayList<>();
         BufferedReader input = new BufferedReader(new FileReader(saveFile));
@@ -289,8 +346,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     suffix = "th";
                 tempQ = null;
                 if(orderSave.get(i) == 1){
+                    HashSet<String> analyseSet = analyseSum.get(1);
                     if(columns[orderSave.indexOf(1)].equals("")){
-                        analyseSummary.add("Note: Empty value for 'Responsibilty Area(s)' in " + lineCount + suffix + " row!");
+                        String analyseMessage = "Note: Empty value for 'Responsibilty Area(s)' in " + lineCount + suffix + " row!";
+                        analyseSet.add(analyseMessage);
+                        analyseSum.put(1, analyseSet);
                     }
                     else{
                         String[] cols = columns[orderSave.indexOf(1)].split(",");
@@ -300,7 +360,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             String[] queryParams = { col };
                             ResultSet rs = QueryUtil.getResult(query, queryParams);
                             if(!rs.next()){
-                                analyseSummary.add("'" + col + "' not found in 'Responsibilty Area(s)', we'll add it!");
+                                String analyseMessage = "'" + col + "' not found in 'Responsibilty Area(s)', we'll add it!";
+                                analyseSet.add(analyseMessage);
+                                analyseSum.put(1, analyseSet);
                                 int ranNo = (int)Math.floor(Math.random() * (99999999 - 1 + 1));
                                 String q = "INSERT INTO SM_RESPONSIBILITY_AREA VALUES(?, ?, 'N')";
                                 String[] qParams = { String.valueOf(ranNo), col };
@@ -309,9 +371,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 tempQ.setString(2, col);
                                 String queStr = tempQ.toString();
                                 String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                                if(action.equals("analyse"))
-                                    analyseSummary.add("Query: " + finalQueStr);
-                                else if(action.equals("generateTaskSQL")){
+                                if(action.equals("generateTaskSQL")){
                                     bufferedWriter.write(finalQueStr+";");
                                     bufferedWriter.newLine();
                                 }
@@ -321,8 +381,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     }
                 }
                 else if(orderSave.get(i) == 2){
+                    HashSet<String> analyseSet = analyseSum.get(2);
                     if(columns[orderSave.indexOf(2)].equals("")){
-                        analyseSummary.add("Note: Empty value for 'Contact(s)' in " + lineCount + suffix + " row!");
+                        String analyseMessage = "Note: Empty value for 'Contact(s)' in " + lineCount + suffix + " row!";
+                        analyseSet.add(analyseMessage);
+                        analyseSum.put(2, analyseSet);
                     }
                     else{
                         String[] cols = columns[orderSave.indexOf(2)].split(",");
@@ -336,16 +399,16 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             ResultSet rs2 = QueryUtil.getResult(que2, queryParams);
                             ResultSet rs3 = QueryUtil.getResult(que3, queryParams);
                             if (!rs1.next() && !rs2.next() && !rs3.next()) {
-                                analyseSummary.add("'" + col + "' not found in 'Contact(s)', we'll add it!");
+                                String analyseMessage = "'" + col + "' not found in 'Contact(s)', we'll add it!";
+                                analyseSet.add(analyseMessage);
+                                analyseSum.put(2, analyseSet);
                                 String q = "INSERT INTO FIM_CONTACT_CUSTOMIZATION_FIELD (CUSTOM_FORM_ID, DISPLAY_NAME, DATA_TYPE, ORDER_NO, FIELD_NO, AVAILABLE) VALUES (1, ?, 'Text', (SELECT nextOrderNo FROM (SELECT MAX(ORDER_NO) + 1 AS nextOrderNo FROM FIM_CONTACT_CUSTOMIZATION_FIELD) AS table1), (SELECT nextFieldNo FROM (SELECT MAX(FIELD_NO) + 1 AS nextFieldNo FROM FIM_CONTACT_CUSTOMIZATION_FIELD) AS table2), 0)";
                                 String[] qParams = { col };
                                 tempQ = con.prepareStatement(q);
                                 tempQ.setString(1, String.valueOf(col));
                                 String queStr = tempQ.toString();
                                 String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                                if(action.equals("analyse"))
-                                    analyseSummary.add("Query: " + finalQueStr);
-                                else if(action.equals("generateTaskSQL")){
+                                if(action.equals("generateTaskSQL")){
                                     bufferedWriter.write(finalQueStr+";");
                                     bufferedWriter.newLine();
                                 }
@@ -355,8 +418,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     }
                 }
                 else if(orderSave.get(i) == 3){
+                    HashSet<String> analyseSet = analyseSum.get(3);
                     if(columns[orderSave.indexOf(3)].equals("")){
-                        analyseSummary.add("Note: Empty value for 'Store Type(s)' in " + lineCount + suffix + " row!");
+                        String analyseMessage = "Note: Empty value for 'Store Type(s)' in " + lineCount + suffix + " row!";
+                        analyseSet.add(analyseMessage);
+                        analyseSum.put(3, analyseSet);
                     }
                     else{
                         String[] cols = columns[orderSave.indexOf(3)].split(",");
@@ -366,16 +432,16 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             String[] queryParams = { col };
                             ResultSet rs = QueryUtil.getResult(que, queryParams);
                             if(!rs.next() && !col.equals("All") && !col.equals("Default Store")){
-                                analyseSummary.add("'" + col + "' not found in 'Store Type(s)', we'll add it!");
+                                String analyseMessage = "'" + col + "' not found in 'Store Type(s)', we'll add it!";
+                                analyseSet.add(analyseMessage);
+                                analyseSum.put(3, analyseSet);
                                 String q = "INSERT INTO STORE_TYPE (ST_NAME, ST_ORDER) VALUES(?, (SELECT nextStoreOrder FROM (SELECT MAX(ST_ORDER) + 1 AS nextStoreOrder FROM STORE_TYPE) AS table1))";
                                 String[] qParams = { col };
                                 tempQ = con.prepareStatement(q);
                                 tempQ.setString(1, col);
                                 String queStr = tempQ.toString();
                                 String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                                if(action.equals("analyse"))
-                                    analyseSummary.add("Query: " + finalQueStr);
-                                else if(action.equals("generateTaskSQL")){
+                                if(action.equals("generateTaskSQL")){
                                     bufferedWriter.write(finalQueStr+";");
                                     bufferedWriter.newLine();
                                 }
@@ -385,12 +451,17 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     }
                 }
                 else if(orderSave.get(i) == 4){
+                    HashSet<String> analyseSet = analyseSum.get(4);
                     String phase = columns[orderSave.indexOf(4)];
                     if(phase.equals("")){
-                        analyseSummary.add("Note: Empty value for 'Group' in " + lineCount + suffix + " row!");
+                        String analyseMessage = "Note: Empty value for 'Group' in " + lineCount + suffix + " row!";
+                        analyseSet.add(analyseMessage);
+                        analyseSum.put(4, analyseSet);
                     }
                     else if(Character.isDigit(phase.charAt(0))){
-                        analyseSummary.add("'" + phase + "' not found in 'Group', Please correct it!");
+                        String analyseMessage = "'" + phase + "' not found in 'Group', Please correct it!";
+                        analyseSet.add(analyseMessage);
+                        analyseSum.put(4, analyseSet);
                     }
                     else{
                         phase = UpIfLower(phase);
@@ -398,16 +469,16 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         String[] queryParams = { phase };
                         ResultSet rs = QueryUtil.getResult(que, queryParams);
                         if(!rs.next()){
-                            analyseSummary.add("'" + phase + "' not found in 'Group', we'll add it!");
+                            String analyseMessage = "'" + phase + "' not found in 'Group', we'll add it!";
+                            analyseSet.add(analyseMessage);
+                            analyseSum.put(4, analyseSet);
                             String q = "INSERT INTO CHECKLIST_GROUPS (GROUP_NAME, GROUP_ORDER) VALUES(?, (SELECT nextGroupOrder FROM (SELECT MAX(GROUP_ORDER) + 1 AS nextGroupOrder FROM CHECKLIST_GROUPS) AS table1))";
                             String[] qParams = { phase };
                             tempQ = con.prepareStatement(q);
                             tempQ.setString(1, phase);
                             String queStr = tempQ.toString();
                             String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                            if(action.equals("analyse"))
-                                analyseSummary.add("Query: " + finalQueStr);
-                            else if(action.equals("generateTaskSQL")){
+                            if(action.equals("generateTaskSQL")){
                                 bufferedWriter.write(finalQueStr+";");
                                 bufferedWriter.newLine();
                             }
@@ -416,25 +487,28 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     }
                 }
                 else if(orderSave.get(i) == 5){
+                    HashSet<String> analyseSet = analyseSum.get(5);
                     String franAccess = columns[orderSave.indexOf(5)];
                     if(franAccess.equals("")){
-                        analyseSummary.add("Note: Empty value for 'Franchisee Access' in " + lineCount + suffix + " row, Hence default value 'Update Status' will be added.");
+                        String analyseMessage = "Note: Empty value for 'Franchisee Access' in " + lineCount + suffix + " row, Hence default value 'Update Status' will be added.";
+                        analyseSet.add(analyseMessage);
+                        analyseSum.put(5, analyseSet);
                     }else{
                         franAccess = UpIfLower(franAccess);
                         String que = "SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE = ?";
                         String[] queParams = { franAccess };
                         ResultSet rs = QueryUtil.getResult(que, queParams);
                         if(!rs.next()){
-                            analyseSummary.add("'" + franAccess + "' not found in 'Franchisee Access', we'll add it!");
+                            String analyseMessage = "'" + franAccess + "' not found in 'Franchisee Access', we'll add it!";
+                            analyseSet.add(analyseMessage);
+                            analyseSum.put(5, analyseSet);
                             String q = "INSERT INTO MASTER_DATA (DATA_TYPE, PARENT_DATA_ID, DATA_VALUE) VALUES('8102', -1, ?)";
                             String[] qParams = { franAccess };
                             tempQ = con.prepareStatement(q);
                             tempQ.setString(1, franAccess);
                             String queStr = tempQ.toString();
                             String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                            if(action.equals("analyse"))
-                                analyseSummary.add("Query: " + finalQueStr);
-                            else if(action.equals("generateTaskSQL")){
+                            if(action.equals("generateTaskSQL")){
                                 bufferedWriter.write(finalQueStr+";");
                                 bufferedWriter.newLine();
                             }
@@ -443,25 +517,28 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     }
                 }
                 else if(orderSave.get(i) == 6){
+                    HashSet<String> analyseSet = analyseSum.get(6);
                     String priority = columns[orderSave.indexOf(6)];
                     if(priority.equals("")){
-                        analyseSummary.add("Note: Empty value for 'Priority' in " + lineCount + suffix + " row, Hence default value 'Recommended' will be added.");
+                        String analyseMessage = "Note: Empty value for 'Priority' in " + lineCount + suffix + " row, Hence default value 'Recommended' will be added.";
+                        analyseSet.add(analyseMessage);
+                        analyseSum.put(6, analyseSet);
                     }else{
                         priority = UpIfLower(priority);
                         String que = "SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY = ?";
                         String[] queParams = { priority };
                         ResultSet rs = QueryUtil.getResult(que, queParams);
                         if(!rs.next()){
-                            analyseSummary.add("'" + priority + "' not found in 'Priority', we'll add it!");
+                            String analyseMessage = "'" + priority + "' not found in 'Priority', we'll add it!";
+                            analyseSet.add(analyseMessage);
+                            analyseSum.put(6, analyseSet);
                             String q = "INSERT INTO SM_CHECKLIST_ITEMS_PRIORITY (PRIORITY) VALUES(?)";
                             String[] qParams = { priority };
                             tempQ = con.prepareStatement(q);
                             tempQ.setString(1, priority);
                             String queStr = tempQ.toString();
                             String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                            if(action.equals("analyse"))
-                                analyseSummary.add("Query: " + finalQueStr);
-                            else if(action.equals("generateTaskSQL")){
+                            if(action.equals("generateTaskSQL")){
                                 bufferedWriter.write(finalQueStr+";");
                                 bufferedWriter.newLine();
                             }
@@ -470,9 +547,12 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     }
                 }
                 else if(orderSave.get(i) == 7){
+                    HashSet<String> analyseSet = analyseSum.get(7);
                     String criLevel = columns[orderSave.indexOf(7)];
                     if(criLevel.equals("")){
-                        analyseSummary.add("Note: Empty value for 'Critical Level' in " + lineCount + suffix + " row, Hence default value 'System Item' will be added.");
+                        String analyseMessage = "Note: Empty value for 'Critical Level' in " + lineCount + suffix + " row, Hence default value 'System Item' will be added.";
+                        analyseSet.add(analyseMessage);
+                        analyseSum.put(7, analyseSet);
                     }
                     else {
                         criLevel = UpIfLower(criLevel);
@@ -480,16 +560,16 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         String[] queParams = { criLevel };
                         ResultSet rs = QueryUtil.getResult(que, queParams);
                         if(!rs.next()){
-                            analyseSummary.add("'" + criLevel + "' not found in 'Critical Level', we'll add it!");
+                            String analyseMessage = "'" + criLevel + "' not found in 'Critical Level', we'll add it!";
+                            analyseSet.add(analyseMessage);
+                            analyseSum.put(7, analyseSet);
                             String q = "INSERT INTO MASTER_DATA (DATA_TYPE, PARENT_DATA_ID, DATA_VALUE) VALUES('130320', (SELECT nextParentId FROM (SELECT MAX(PARENT_DATA_ID) + 1 AS nextParentId FROM MASTER_DATA WHERE DATA_TYPE='130320') AS table1), ?)";
                             String[] qParams = { criLevel };
                             tempQ = con.prepareStatement(q);
                             tempQ.setString(1, criLevel);
                             String queStr = tempQ.toString();
                             String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                            if(action.equals("analyse"))
-                                analyseSummary.add("Query: " + finalQueStr);
-                            else if(action.equals("generateTaskSQL")){
+                            if(action.equals("generateTaskSQL")){
                                 bufferedWriter.write(finalQueStr+";");
                                 bufferedWriter.newLine();
                             }
@@ -498,10 +578,13 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     }
                 }
                 else if (orderSave.get(i) == 8) {
+                    HashSet<String> analyseSet = analyseSum.get(8);
                     refParent = columns[orderSave.indexOf(8)];
                     refField = columns[orderSave.indexOf(10)];
                     if(refParent.equals("")){
-                        analyseSummary.add("Note: Empty value for 'Dependent On' in " + lineCount + suffix + " row, Please mention it!");
+                        String analyseMessage = "Note: Empty value for 'Dependent On' in " + lineCount + suffix + " row, Please mention it!";
+                        analyseSet.add(analyseMessage);
+                        analyseSum.put(8, analyseSet);
                     }
                     else if (refParent.indexOf("Project") != -1) {
                         refParent = UpIfLower(refParent);
@@ -509,16 +592,16 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         String[] queParams = { refParent };
                         ResultSet rs = QueryUtil.getResult(que, queParams);
                         if (!rs.next()) {
-                            analyseSummary.add("'" + refParent + "' not found in 'Dependent On', we'll add it!");
+                            String analyseMessage = "'" + refParent + "' not found in 'Dependent On', we'll add it!";
+                            analyseSet.add(analyseMessage);
+                            analyseSum.put(8, analyseSet);
                             String q = "INSERT INTO FO_CUSTOMIZATION_FIELD (DISPLAY_NAME, DATA_TYPE, FIELD_NO, ORDER_NO, EXPORTABLE, SEARCHABLE, AVAILABLE) VALUES(?, 'Date', (SELECT nextFieldNo FROM (SELECT MAX(FIELD_NO) + 1 AS nextFieldNo FROM FO_CUSTOMIZATION_FIELD) AS table1), (SELECT nextOrderNo FROM (SELECT MAX(ORDER_NO) + 1 AS nextOrderNo FROM FO_CUSTOMIZATION_FIELD) AS table1), 1, 1, 0)";
                             String[] qParams = { refParent };
                             tempQ = con.prepareStatement(q);
                             tempQ.setString(1, refParent);
                             String queStr = tempQ.toString();
                             String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                            if(action.equals("analyse"))
-                                analyseSummary.add("Query: " + finalQueStr);
-                            else if(action.equals("generateTaskSQL")){
+                            if(action.equals("generateTaskSQL")){
                                 bufferedWriter.write(finalQueStr+";");
                                 bufferedWriter.newLine();
                             }
@@ -539,7 +622,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     else if(refParent.indexOf("Task") != -1 && refParent.equalsIgnoreCase("Task Checklist")){
                         refParent = "TASK_CHECKLIST";
                         if(refField.equals("")){
-                            analyseSummary.add("Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!");
+                            String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
+                            analyseSet.add(analyseMessage);
+                            analyseSum.put(8, analyseSet);
                         }
                         else{
                             String que = "SELECT TASK_ID FROM SM_TASK_CHECKLIST WHERE TASK LIKE '%" + refField + "%'";
@@ -551,7 +636,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     else if(refParent.indexOf("Equipment") != -1 && refParent.equalsIgnoreCase("Equipment Checklist")){
                         refParent = "EQUIPMENT_CHECKLIST";
                         if(refField.equals("")){
-                            analyseSummary.add("Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!");
+                            String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
+                            analyseSet.add(analyseMessage);
+                            analyseSum.put(8, analyseSet);
                         }else{
                             String que = "SELECT EQUIPMENT_ID FROM SM_EQUIPMENT_CHECKLIST WHERE EQUIPMENT_NAME LIKE '%" + refField + "%'";
                             ResultSet rs = QueryUtil.getResult(que, null);
@@ -562,7 +649,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     else if(refParent.indexOf("Document") != -1 && refParent.equalsIgnoreCase("Document Checklist")){
                         refParent = "DOCUMENT_CHECKLIST";
                         if(refField.equals("")){
-                            analyseSummary.add("Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!");
+                            String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
+                            analyseSet.add(analyseMessage);
+                            analyseSum.put(8, analyseSet);
                         }
                         else{
                             String que = "SELECT DOCUMENT_ID FROM SM_DOCUMENT_CHECKLIST WHERE DOCUMENT_NAME LIKE '%" + refField + "%'";
@@ -574,7 +663,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     else if(refParent.indexOf("Picture") != -1 && refParent.equalsIgnoreCase("Picture Checklist")){
                         refParent = "PICTURE_CHECKLIST";
                         if(refField.equals("")){
-                            analyseSummary.add("Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!");
+                            String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
+                            analyseSet.add(analyseMessage);
+                            analyseSum.put(8, analyseSet);
                         }
                         else{
                             String que = "SELECT PICTURE_ID FROM SM_PICTURE_CHECKLIST WHERE TITLE LIKE '%" + refField + "%'";
@@ -586,7 +677,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     else if(refParent.indexOf("Secondary") != -1 && refParent.equalsIgnoreCase("Secondary Checklist")){
                         refParent = "SECONDRY_CHECKLIST";
                         if(refField.equals("")){
-                            analyseSummary.add("Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!");
+                            String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
+                            analyseSet.add(analyseMessage);
+                            analyseSum.put(8, analyseSet);
                         }
                         else{
                             String que = "SELECT ITEM_ID FROM SM_SECONDRY_CHECKLIST WHERE ITEM_NAME LIKE '%" + refField + "%'";
@@ -652,7 +745,10 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 criLevel = "System Item";
             String refFlag = row[orderSave.indexOf(9)];
             if(refFlag.equals("")){
-                analyseSummary.add("Note: Empty value for 'Timing trigger for task' in " + lineCount + suffix + " row!");
+                HashSet<String> analyseSet = analyseSum.get(9);
+                String analyseMessage = "Note: Empty value for 'Timing trigger for task' in " + lineCount + suffix + " row!";
+                analyseSet.add(analyseMessage);
+                analyseSum.put(9, analyseSet);
             }else if(refFlag.indexOf("omple") != -1)
                 refFlag = "Complete";
             else if(refFlag.indexOf("tart") != -1){
@@ -661,9 +757,12 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 refFlag = "End";
             }
             String depFlag = row[orderSave.indexOf(11)];
-            if(depFlag.equals(""))
-                analyseSummary.add("Note: Empty value for 'Initialize Dependency' in " + lineCount + suffix + " row!");
-            else if("Yes".equals(depFlag))
+            if(depFlag.equals("")){
+                HashSet<String> analyseSet = analyseSum.get(11);
+                String analyseMessage = "Note: Empty value for 'Initialize Dependency' in " + lineCount + suffix + " row!";
+                analyseSet.add(analyseMessage);
+                analyseSum.put(11, analyseSet);
+            }else if("Yes".equals(depFlag))
                 depFlag = "Y";
             else 
                 depFlag = "N";
@@ -682,20 +781,37 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 scheduleFlag = "Prior";
 
             if(startDate.equals("")){
-                analyseSummary.add("Note: Empty value for 'Start Date' in " + lineCount + suffix + " row!");
+                HashSet<String> analyseSet = analyseSum.get(12);
+                String analyseMessage = "Note: Empty value for 'Start Date' in " + lineCount + suffix + " row!";
+                analyseSet.add(analyseMessage);
+                analyseSum.put(12, analyseSet);
                 startDate = "0";
             }
             if(scheduleDate.equals("")){
-                analyseSummary.add("Note: Empty value for 'Completion Date' in " + lineCount + suffix + " row!");
+                HashSet<String> analyseSet = analyseSum.get(14);
+                String analyseMessage = "Note: Empty value for 'Completion Date' in " + lineCount + suffix + " row!";
+                analyseSet.add(analyseMessage);
+                analyseSum.put(14, analyseSet);
                 scheduleDate = "0";
             }
-            if(startFlag.equals(""))
-                analyseSummary.add("Note: Empty value for 'Start prior to or after' in " + lineCount + suffix + " row!");
-            if(scheduleFlag.equals(""))
-                analyseSummary.add("Note: Empty value for 'Schedule prior to or after' in " + lineCount + suffix + " row!");
+            if(startFlag.equals("")){
+                HashSet<String> analyseSet = analyseSum.get(13);
+                String analyseMessage = "Note: Empty value for 'Start prior to or after' in " + lineCount + suffix + " row!";
+                analyseSet.add(analyseMessage);
+                analyseSum.put(13, analyseSet);
+            }
+            if(scheduleFlag.equals("")){
+                HashSet<String> analyseSet = analyseSum.get(15);
+                String analyseMessage = "Note: Empty value for 'Schedule prior to or after' in " + lineCount + suffix + " row!";
+                analyseSet.add(analyseMessage);
+                analyseSum.put(15, analyseSet);
+            }
             if(!startDate.equals("") && !scheduleDate.equals("") && !startFlag.equals("") && !scheduleFlag.equals("")){
                 if((startFlag.equals("Prior") && scheduleFlag.equals("Prior") && Integer.parseInt(startDate) < Integer.parseInt(scheduleDate)) || (startFlag.equals("After") && scheduleFlag.equals("After") &&  Integer.parseInt(scheduleDate) < Integer.parseInt(startDate)) || (startFlag.equals("After") && scheduleFlag.equals("Prior"))){
-                    analyseSummary.add("Note: Schedule Completion should be greater than Schedule Start in " + lineCount + suffix + " row!");
+                    HashSet<String> analyseSet = analyseSum.get(15);
+                    String analyseMessage = "Note: Schedule Completion should be greater than Schedule Start in " + lineCount + suffix + " row!";
+                    analyseSet.add(analyseMessage);
+                    analyseSum.put(15, analyseSet);
                 }
             }
             String startRem = null, completionRem = null;
@@ -704,7 +820,10 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 completionRem = row[orderSave.indexOf(17)];
                 if(!startRem.equals("") && !completionRem.equals("")){
                     if(Integer.parseInt(startRem) < Integer.parseInt(completionRem)){
-                        analyseSummary.add("Note: Reminder Schedule Completion should be greater than Reminder Schedule Start in " + lineCount + suffix + " row!");
+                    HashSet<String> analyseSet = analyseSum.get(17);
+                        String analyseMessage = "Note: Reminder Schedule Completion should be greater than Reminder Schedule Start in " + lineCount + suffix + " row!";
+                        analyseSet.add(analyseMessage);
+                        analyseSum.put(17, analyseSet);
                     }
                 }
             }
@@ -731,20 +850,32 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             System.out.println("FINAL QUERY:" + pst.toString());
             // pst.executeUpdate();
     }
-    // Return Analyse Summary :
-        if(action.equals("analyse")){
-            %><ol><%
-            for(String summary : analyseSummary){
+    if(action.equals("analyse")){
+        for (Map.Entry<Integer, HashSet<String>> entry : analyseSum.entrySet()) {
+            int key = entry.getKey();
+            HashSet<String> sumSet = entry.getValue();
+            if(!sumSet.isEmpty()){
                 %>
-                <li><%= summary %></li>
+                <div class="key" onclick="toggleStrings(this)">
+                    <p> <i style="font-size:24px" class="fa">&#xf0a9;</i>&nbsp;Following issues were observed in&nbsp;<span class="headInfo">'<%= orderInfoMap.get(key) %>'</span> <span class="tooltip">Click to expand</span>
+                    </p>
+                </div>
+                <div class="strings">
+                    <ol>
+                    <% for (String str : sumSet) { %>
+                        <li><%= str %></li>
+                    <% } %>
+                    </ol>
+                </div>
                 <%
             }
-            %></ol><%
-        // Generating SQL file
-        }else if(action.equals("generateTaskSQL")){
-            bufferedWriter.close();
-            writer.close();
         }
+    }
+    // Generating SQL file
+    else if(action.equals("generateTaskSQL")){
+        bufferedWriter.close();
+        writer.close();
+    }
         System.out.println("---------------------Data Processed Successfully---------------------");
         input.close();
         con.close();
@@ -764,4 +895,18 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
     }
 }
 %>
+<script>
+    function toggleStrings(element) {
+        var stringsElement = element.nextElementSibling;
+        //when click on p tag it'll toggle the show class
+        stringsElement.classList.toggle("show");
+        var pTag = element.querySelector('p');
+        var tooltip = pTag.querySelector('.tooltip');
+        var isExpanded = stringsElement.classList.contains("show");
+        if (isExpanded)
+            pTag.querySelector('.tooltip').textContent = 'Click to collapse';
+        else 
+            pTag.querySelector('.tooltip').textContent = 'Click to expand';
+    }
+</script>
 </html>
