@@ -17,6 +17,7 @@
 <html>
     <head>
         <title>Task Checklist Automation</title>
+        <link id="fav" rel="icon" type="image/x-icon" href="checklistFavicon.png">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
         body {
