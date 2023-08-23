@@ -8,9 +8,85 @@
     <link id="fav" rel="icon" type="image/x-icon" href="checklistFavicon.png">
 </head>
 <style>
-</style>
-<body>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f7f7f7;
+    }
 
+    h1 {
+        color: #333333;
+        font-size: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 10vh;
+    }
+
+    p {
+        font-weight: 500;
+        max-width: fit-content;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        background-color: #ffffff;
+        color: #555555;
+    }
+
+    .headImg {
+        width: 1em;
+        height: auto;
+        margin-left: 10px;
+    }
+
+    .list-container {
+        font-weight: 500;
+        max-width: fit-content;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        background-color: #ffffff;
+        color: #555555;
+        text-align: center;
+        margin: 2em auto 0;
+    }
+
+    .list-item {
+        display: block;
+        font-weight: 550;
+        margin-bottom: 10px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        color: #333;
+        font-size: 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        text-decoration: none;
+        transition: background-color 0.3s;
+    }
+
+    .item1:hover {
+        background-color: #fbd383;
+    }
+    .item2:hover{
+        background-color: #92e6fd;
+    }
+</style>
+
+<body>
+    <h1>Checklist Automation Tool <img class="headImg" src="checklistFavicon.png" alt="tool"></h1>
+    <div class="container">
+        <p>Analyse Task/Secondary Checklist Or Generate SQL To Import</p>
+    </div>
+    <div class="list-container">
+        <a href="uploadChecklist.jsp" class="list-item item1">Task Checklist</a>
+        <a href="uploadChecklist.jsp" class="list-item item2">Secondary Checklist</a>
+    </div>
 </body>
 
 </html>
