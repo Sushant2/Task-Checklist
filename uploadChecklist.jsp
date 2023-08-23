@@ -120,12 +120,12 @@
             </div>
             <div class="form-group">
                 <input type="hidden" id="actAnalyse" name="act" value="analyse">
-                <input onclick='sendAtt(document.getElementById("actAnalyse").value);' class="form-analyse"
+                <input onclick='return sendAtt(document.getElementById("actAnalyse").value);' class="form-analyse"
                     type="submit" value="Analyse">
             </div>
             <div class="form-group">
                 <input type="hidden" id="actGenerateSQL" name="act" value="generateTaskSQL">
-                <input onclick='sendAtt(document.getElementById("actGenerateSQL").value);' class="form-submit"
+                <input onclick='return sendAtt(document.getElementById("actGenerateSQL").value);' class="form-submit"
                     type="submit" value="Generate SQL">
             </div>
         </form>
@@ -142,8 +142,16 @@
 </body>
 <script>
     function sendAtt(myAct) {
-        myForm.action = "processChecklist.jsp?act=" + myAct;
-        myForm.submit();
+        var fileInput = document.querySelector('input[name="file"]');
+        if (fileInput.files.length === 0) {
+            alert("Please choose a file before proceeding.");
+            return false;
+        }
+        else{
+            myForm.action = "processChecklist.jsp?act=" + myAct;
+            myForm.submit();
+            return true;
+        }
     }
     function togglePopup() {
         var popup = document.getElementById("popup");
