@@ -3,6 +3,7 @@
 
 <head>
     <title>Task Checklist Automation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">          
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -78,6 +79,34 @@
         .form-analyse:hover {
             background-color: #c37c27;
         }
+        .bulb-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+        }
+        .popup {
+            position: fixed;
+            top: 50px;
+            right: 70px;
+            width: 200px;
+            background-color: #ffffff;
+            border: 1px solid #dddddd;
+            border-radius: 5px;
+            padding: 10px;
+            display: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+        .bulb-icon {
+            color: #000000; /* Change to the desired color */
+        }
+        li {
+            font-size: 15px;
+            line-height: 1;
+            margin-bottom: 5px;
+            color: #333;
+        }
     </style>
 </head>
 
@@ -101,11 +130,24 @@
             </div>
         </form>
     </div>
+    <div class="bulb-container" onclick="togglePopup()">
+        <i class='fa fa-lightbulb-o fa-2x bulb-icon'></i>
+        <div class="popup" id="popup">
+            <h4>Key Points To Check To Import Checklist:</h4>
+            <li>Convert your Checklist Sheet into CSV Format for compatibility.</li>
+            <li>Ensure only a single row containing Column Names is present.</li>
+            <li>Ensure that Checklist Sheet does not contain completely empty rows.</li>
+        </div>
+    </div>    
 </body>
 <script>
     function sendAtt(myAct) {
         myForm.action = "processChecklist.jsp?act=" + myAct;
         myForm.submit();
+    }
+    function togglePopup() {
+        var popup = document.getElementById("popup");
+        popup.style.display = (popup.style.display === "block") ? "none" : "block";
     }
 </script>
 
