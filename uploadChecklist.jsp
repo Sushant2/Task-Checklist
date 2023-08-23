@@ -133,7 +133,7 @@
     <div class="bulb-container" onclick="togglePopup()">
         <i class='fa fa-lightbulb-o fa-2x bulb-icon'></i>
         <div class="popup" id="popup">
-            <h4>Key Points To Check To Import Checklist:</h4>
+            <h4>Key Points To Import Checklist:</h4>
             <li>Convert your Checklist Sheet into CSV Format for compatibility.</li>
             <li>Ensure only a single row containing Column Names is present.</li>
             <li>Ensure that Checklist Sheet does not contain completely empty rows.</li>
