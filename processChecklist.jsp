@@ -463,7 +463,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 }
                 else if(orderSave.get(i) == 4){
                     HashSet<String> analyseSet = analyseSum.get(4);
-                    String phase = columns[orderSave.indexOf(4)];
+                    String phase = "";
+                    if(orderSave.indexOf(4) < columns.length)
+                        phase = columns[orderSave.indexOf(4)];
                     if(phase.equals("")){
                         String analyseMessage = "Note: Empty value for 'Group' in " + lineCount + suffix + " row!";
                         analyseSet.add(analyseMessage);
@@ -502,7 +504,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 }
                 else if(orderSave.get(i) == 5){
                     HashSet<String> analyseSet = analyseSum.get(5);
-                    String franAccess = columns[orderSave.indexOf(5)];
+                    String franAccess = "";
+                    if(orderSave.indexOf(5) < columns.length)
+                        franAccess = columns[orderSave.indexOf(5)];
                     if(franAccess.equals("")){
                         String analyseMessage = "Note: Empty value for 'Franchisee Access' in " + lineCount + suffix + " row, Hence default value 'Update Status' will be added.";
                         analyseSet.add(analyseMessage);
@@ -535,7 +539,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 }
                 else if(orderSave.get(i) == 6){
                     HashSet<String> analyseSet = analyseSum.get(6);
-                    String priority = columns[orderSave.indexOf(6)];
+                    String priority = "";
+                    if(orderSave.indexOf(6) < columns.length)
+                        priority = columns[orderSave.indexOf(6)];
                     if(priority.equals("")){
                         String analyseMessage = "Note: Empty value for 'Priority' in " + lineCount + suffix + " row, Hence default value 'Recommended' will be added.";
                         analyseSet.add(analyseMessage);
@@ -568,7 +574,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 }
                 else if(orderSave.get(i) == 7){
                     HashSet<String> analyseSet = analyseSum.get(7);
-                    String criLevel = columns[orderSave.indexOf(7)];
+                    String criLevel = "";
+                    if(orderSave.indexOf(7) < columns.length)
+                        criLevel = columns[orderSave.indexOf(7)];
                     if(criLevel.equals("")){
                         String analyseMessage = "Note: Empty value for 'Critical Level' in " + lineCount + suffix + " row, Hence default value 'System Item' will be added.";
                         analyseSet.add(analyseMessage);
@@ -602,8 +610,12 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 }
                 else if (orderSave.get(i) == 8) {
                     HashSet<String> analyseSet = analyseSum.get(8);
-                    refParent = columns[orderSave.indexOf(8)];
-                    refField = columns[orderSave.indexOf(10)];
+                    refParent = "";
+                    if(orderSave.indexOf(8) < columns.length)
+                        refParent = columns[orderSave.indexOf(8)];
+                    refField = "";
+                    if(orderSave.indexOf(10) < columns.length)
+                        refField = columns[orderSave.indexOf(10)];
                     if(refParent.equals("")){
                         String analyseMessage = "Note: Empty value for 'Dependent On' in " + lineCount + suffix + " row, Please mention it!";
                         analyseSet.add(analyseMessage);
@@ -769,7 +781,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             String criLevel = row[orderSave.indexOf(7)];
             if(criLevel.equals(""))
                 criLevel = "System Item";
-            String refFlag = row[orderSave.indexOf(9)];
+            String refFlag = "";
+            if(orderSave.indexOf(9) < row.length)
+                refFlag = row[orderSave.indexOf(9)];
             if(refFlag.equals("")){
                 HashSet<String> analyseSet = analyseSum.get(9);
                 String analyseMessage = "Note: Empty value for 'Timing trigger for task' in " + lineCount + suffix + " row!";
@@ -782,7 +796,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             }else if(refFlag.indexOf("nd") != -1){
                 refFlag = "End";
             }
-            String depFlag = row[orderSave.indexOf(11)];
+            String depFlag = "";
+            if(orderSave.indexOf(11) < row.length)
+                depFlag = row[orderSave.indexOf(11)];
             if(depFlag.equals("")){
                 HashSet<String> analyseSet = analyseSum.get(11);
                 String analyseMessage = "Note: Empty value for 'Initialize Dependency' in " + lineCount + suffix + " row!";
@@ -792,15 +808,23 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 depFlag = "Y";
             else 
                 depFlag = "N";
-            String startDate = row[orderSave.indexOf(12)];
-            String startFlag = row[orderSave.indexOf(13)];
+            String startDate = "";
+            if(orderSave.indexOf(12) < row.length)
+                startDate = row[orderSave.indexOf(12)];
+            String startFlag = "";
+            if(orderSave.indexOf(13) < row.length)
+                startFlag = row[orderSave.indexOf(13)];
             if("Days after".equals(startFlag))
                 startFlag = "After";
             else if("Days prior".equals(startFlag))
                 startFlag = "Prior";
 
-            String scheduleDate = row[orderSave.indexOf(14)];
-            String scheduleFlag = row[orderSave.indexOf(15)];
+            String scheduleDate = "";
+            if(orderSave.indexOf(14) < row.length)
+                scheduleDate = row[orderSave.indexOf(14)];
+            String scheduleFlag = "";
+            if(orderSave.indexOf(15) < row.length)
+                scheduleFlag = row[orderSave.indexOf(15)];
             if("Days after".equals(scheduleFlag))
                 scheduleFlag = "After";
             else if("Days prior".equals(scheduleFlag))
@@ -842,8 +866,12 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             }
             String startRem = null, completionRem = null;
             if(orderSave.size()>16){
-                startRem = row[orderSave.indexOf(16)];
-                completionRem = row[orderSave.indexOf(17)];
+                startRem = "";
+                if(orderSave.indexOf(16) < row.length)
+                    startRem = row[orderSave.indexOf(16)];
+                completionRem = "";
+                if(orderSave.indexOf(17) < row.length)
+                    completionRem = row[orderSave.indexOf(17)];
                 if(!startRem.equals("") && !completionRem.equals("")){
                     if(Integer.parseInt(startRem) < Integer.parseInt(completionRem)){
                     HashSet<String> analyseSet = analyseSum.get(17);
@@ -855,7 +883,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             }
             String webUrl = null;
             if(orderSave.indexOf(18) != -1){
-                webUrl = row[orderSave.indexOf(18)];
+                webUrl = "";
+                if(orderSave.indexOf(18) < row.length)
+                    webUrl = row[orderSave.indexOf(18)];
             }
             if(orderSave.size() == 16 && orderSave.indexOf(15) != -1){
                 pst = con.prepareStatement("INSERT INTO SM_TASK_CHECKLIST (TASK, TASK_ID, RESPONSIBILITY_AREA, CONTACT, ST_ID, GROUP_ID, FRANCHISEE_ACCESS, PRIORITY_ID, CRITICAL_LEVEL_ID, REFERENCE_PARENT, REFERENCE_FLAG, REFERENCE_FIELD, DEPENDENCY_FLAG, START_DATE, START_FLAG, SCHEDULE_DATE, SCHEDULE_FLAG) VALUES (?, NULL, (SELECT GROUP_CONCAT(RESPONSIBILITY_AREA_ID) FROM SM_RESPONSIBILITY_AREA WHERE RESPONSIBILITY_AREA IN ('" + resArea + "')), (SELECT GROUP_CONCAT(CONTACT_INFO) FROM (SELECT USER_NO AS CONTACT_INFO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN ('" + contacts + "') UNION SELECT SUPPLIER_NO AS CONTACT_INFO FROM SUPPLIERS WHERE SUPPLIER_NAME IN ('" + contacts + "') UNION SELECT CONCAT('-', FIELD_ID, 'S') AS CONTACT_INFO FROM FIM_CONTACT_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN ('" + contacts + "')) AS CONTACT),("+stID+"),(SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME IN ('" + groupType + "')), (SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE IN ('" + franAccess + "')), (SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY IN ('" + priority + "')), (SELECT PARENT_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='130320' AND DATA_VALUE IN ('" + criLevel + "')), '" + refParent + "', '"+refFlag+"', '" + refField + "', '"+depFlag+"' ,"+startDate+",('"+startFlag+"'),"+scheduleDate+",('"+scheduleFlag+"'))");
