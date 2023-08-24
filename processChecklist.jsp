@@ -439,7 +439,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             String que = "SELECT ST_ID FROM STORE_TYPE WHERE ST_NAME IN (?)";
                             String[] queryParams = { col };
                             ResultSet rs = QueryUtil.getResult(que, queryParams);
-                            if(!rs.next() && !col.equals("All") && !col.equals("Default Store")){
+                            if(!rs.next() && !col.equalsIgnoreCase("All") && !col.equalsIgnoreCase("Default Store") && !col.equalsIgnoreCase("All Stores")){
                                 String analyseMessage = "'" + col + "' not found in 'Store Type(s)', we'll add it!";
                                 analyseSet.add(analyseMessage);
                                 analyseSum.put(3, analyseSet);
@@ -611,12 +611,16 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 else if (orderSave.get(i) == 8) {
                     HashSet<String> analyseSet = analyseSum.get(8);
                     refParent = "";
+                    refField = "";
                     if(orderSave.indexOf(8) < columns.length)
                         refParent = columns[orderSave.indexOf(8)];
-                    refField = "";
                     if(orderSave.indexOf(10) < columns.length)
                         refField = columns[orderSave.indexOf(10)];
-                    if(refParent.equals("")){
+
+                    if(refParent.indexOf("Timeless") != -1){
+                        refParent = "-1";
+                        refField = "-1";
+                    }else if(refParent.equals("")){
                         String analyseMessage = "Note: Empty value for 'Dependent On' in " + lineCount + suffix + " row, Please mention it!";
                         analyseSet.add(analyseMessage);
                         analyseSum.put(8, analyseSet);
@@ -726,7 +730,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 refField = rs.getString("ITEM_ID");
                         }
                     }
-                    else {
+                    else if(refParent != "-1" && refField != "-1"){
                         refParent = null;
                         refField = "GRAND_STORE_OPENING_DATE";
                     }
@@ -764,7 +768,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 ResultSet rs = QueryUtil.getResult(storeTypeQuery, queryParams);
                 if(rs.next())
                     stID=rs.getString("ST_ID");
-                else if("All".equals(storeNames))
+                else if("All".equals(storeNames) || storeNames.equals("All Stores"))
                     stID="666";
             }
             String groupType = null;
@@ -784,14 +788,17 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             String refFlag = "";
             if(orderSave.indexOf(9) < row.length)
                 refFlag = row[orderSave.indexOf(9)];
-            if(refFlag.equals("")){
+            if(refFlag.equals("") && refParent.equals("-1") && refField.equals("-1")){
+                refFlag = "-1";
+            }
+            else if(refFlag.equals("")){
                 HashSet<String> analyseSet = analyseSum.get(9);
                 String analyseMessage = "Note: Empty value for 'Timing trigger for task' in " + lineCount + suffix + " row!";
                 analyseSet.add(analyseMessage);
                 analyseSum.put(9, analyseSet);
-            }else if(refFlag.indexOf("omple") != -1)
+            }else if(refFlag.indexOf("omple") != -1){
                 refFlag = "Complete";
-            else if(refFlag.indexOf("tart") != -1){
+            }else if(refFlag.indexOf("tart") != -1){
                 refFlag = "Start";
             }else if(refFlag.indexOf("nd") != -1){
                 refFlag = "End";
@@ -799,7 +806,10 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             String depFlag = "";
             if(orderSave.indexOf(11) < row.length)
                 depFlag = row[orderSave.indexOf(11)];
-            if(depFlag.equals("")){
+            if(depFlag.equals("") && refParent.equals("-1") && refField.equals("-1") && refFlag.equals("-1")){
+                depFlag = "";
+            }
+            else if(depFlag.equals("") && refParent != "-1"){
                 HashSet<String> analyseSet = analyseSum.get(11);
                 String analyseMessage = "Note: Empty value for 'Initialize Dependency' in " + lineCount + suffix + " row!";
                 analyseSet.add(analyseMessage);
@@ -830,27 +840,27 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             else if("Days prior".equals(scheduleFlag))
                 scheduleFlag = "Prior";
 
-            if(startDate.equals("")){
+            if(startDate.equals("") && refParent != "-1"){
                 HashSet<String> analyseSet = analyseSum.get(12);
                 String analyseMessage = "Note: Empty value for 'Start Date' in " + lineCount + suffix + " row!";
                 analyseSet.add(analyseMessage);
                 analyseSum.put(12, analyseSet);
-                startDate = "0";
+                startDate = "";
             }
-            if(scheduleDate.equals("")){
+            if(scheduleDate.equals("") && refParent != "-1"){
                 HashSet<String> analyseSet = analyseSum.get(14);
                 String analyseMessage = "Note: Empty value for 'Completion Date' in " + lineCount + suffix + " row!";
                 analyseSet.add(analyseMessage);
                 analyseSum.put(14, analyseSet);
-                scheduleDate = "0";
+                scheduleDate = "";
             }
-            if(startFlag.equals("")){
+            if(startFlag.equals("") && refParent != "-1"){
                 HashSet<String> analyseSet = analyseSum.get(13);
                 String analyseMessage = "Note: Empty value for 'Start prior to or after' in " + lineCount + suffix + " row!";
                 analyseSet.add(analyseMessage);
                 analyseSum.put(13, analyseSet);
             }
-            if(scheduleFlag.equals("")){
+            if(scheduleFlag.equals("") && refParent != "-1"){
                 HashSet<String> analyseSet = analyseSum.get(15);
                 String analyseMessage = "Note: Empty value for 'Schedule prior to or after' in " + lineCount + suffix + " row!";
                 analyseSet.add(analyseMessage);
