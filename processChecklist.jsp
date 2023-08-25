@@ -821,24 +821,34 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             String startDate = "";
             if(orderSave.indexOf(12) < row.length)
                 startDate = row[orderSave.indexOf(12)];
+            else
+                startDate = "NULL";
             String startFlag = "";
-            if(orderSave.indexOf(13) < row.length)
+            if(orderSave.indexOf(13) < row.length){
                 startFlag = row[orderSave.indexOf(13)];
-            if("Days after".equals(startFlag))
-                startFlag = "After";
-            else if("Days prior".equals(startFlag))
-                startFlag = "Prior";
+                if("Days After".equalsIgnoreCase(startFlag))
+                    startFlag = "After";
+                else if("Days Prior".equalsIgnoreCase(startFlag))
+                    startFlag = "Prior";
+            }
+            else
+                startFlag = "NULL";
 
             String scheduleDate = "";
             if(orderSave.indexOf(14) < row.length)
                 scheduleDate = row[orderSave.indexOf(14)];
+            else
+                scheduleDate = "NULL";
             String scheduleFlag = "";
-            if(orderSave.indexOf(15) < row.length)
+            if(orderSave.indexOf(15) < row.length){
                 scheduleFlag = row[orderSave.indexOf(15)];
-            if("Days after".equals(scheduleFlag))
-                scheduleFlag = "After";
-            else if("Days prior".equals(scheduleFlag))
-                scheduleFlag = "Prior";
+                if("Days After".equalsIgnoreCase(scheduleFlag))
+                    scheduleFlag = "After";
+                else if("Days Prior".equalsIgnoreCase(scheduleFlag))
+                    scheduleFlag = "Prior";
+            }
+            else
+                scheduleFlag = "NULL";
 
             if(startDate.equals("") && refParent != "-1"){
                 HashSet<String> analyseSet = analyseSum.get(12);
@@ -866,7 +876,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 analyseSet.add(analyseMessage);
                 analyseSum.put(15, analyseSet);
             }
-            if(!startDate.equals("") && !scheduleDate.equals("") && !startFlag.equals("") && !scheduleFlag.equals("")){
+            if(!startDate.equals("") && !scheduleDate.equals("") && !startFlag.equals("") && !scheduleFlag.equals("") && startDate != "NULL" && scheduleDate != "NULL" && startFlag != "NULL" && scheduleFlag != "NULL"){
                 if((startFlag.equals("Prior") && scheduleFlag.equals("Prior") && Integer.parseInt(startDate) < Integer.parseInt(scheduleDate)) || (startFlag.equals("After") && scheduleFlag.equals("After") &&  Integer.parseInt(scheduleDate) < Integer.parseInt(startDate)) || (startFlag.equals("After") && scheduleFlag.equals("Prior"))){
                     HashSet<String> analyseSet = analyseSum.get(15);
                     String analyseMessage = "Note: Schedule Completion should be greater than Schedule Start in " + lineCount + suffix + " row!";
@@ -876,13 +886,18 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             }
             String startRem = null, completionRem = null;
             if(orderSave.size()>16){
-                startRem = "";
+                // startRem = "";completionRem = "";
                 if(orderSave.indexOf(16) < row.length)
                     startRem = row[orderSave.indexOf(16)];
-                completionRem = "";
+                else
+                    startRem = "NULL";
+                
                 if(orderSave.indexOf(17) < row.length)
                     completionRem = row[orderSave.indexOf(17)];
-                if(!startRem.equals("") && !completionRem.equals("")){
+                else
+                    completionRem  = "NULL";
+
+                if(!startRem.equals("") && !completionRem.equals("") && startRem != "NULL" && completionRem != "NULL"){
                     if(Integer.parseInt(startRem) < Integer.parseInt(completionRem)){
                     HashSet<String> analyseSet = analyseSum.get(17);
                         String analyseMessage = "Note: Reminder Schedule Completion should be greater than Reminder Schedule Start in " + lineCount + suffix + " row!";
