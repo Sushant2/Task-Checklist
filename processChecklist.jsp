@@ -439,7 +439,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             String que = "SELECT ST_ID FROM STORE_TYPE WHERE ST_NAME IN (?)";
                             String[] queryParams = { col };
                             ResultSet rs = QueryUtil.getResult(que, queryParams);
-                            if(!rs.next() && !col.equals("All") && !col.equals("Default Store")){
+                            if(!rs.next() && !col.equalsIgnoreCase("All") && !col.equalsIgnoreCase("Default Store") && !col.equalsIgnoreCase("All Stores")){
                                 String analyseMessage = "'" + col + "' not found in 'Store Type(s)', we'll add it!";
                                 analyseSet.add(analyseMessage);
                                 analyseSum.put(3, analyseSet);
@@ -611,124 +611,133 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 else if (orderSave.get(i) == 8) {
                     HashSet<String> analyseSet = analyseSum.get(8);
                     refParent = "";
-                    if(orderSave.indexOf(8) < columns.length)
+                    if(orderSave.indexOf(8) < columns.length){
                         refParent = columns[orderSave.indexOf(8)];
-                    refField = "";
-                    if(orderSave.indexOf(10) < columns.length)
-                        refField = columns[orderSave.indexOf(10)];
-                    if(refParent.equals("")){
-                        String analyseMessage = "Note: Empty value for 'Dependent On' in " + lineCount + suffix + " row, Please mention it!";
-                        analyseSet.add(analyseMessage);
-                        analyseSum.put(8, analyseSet);
+                        if(refParent.contains("Timeless"))
+                            refParent = "-1";
                     }
-                    else if (refParent.indexOf("Project") != -1) {
-                        refParent = UpIfLower(refParent);
-                        String que = "SELECT FIELD_ID FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN (?)";
-                        String[] queParams = { refParent };
-                        ResultSet rs = QueryUtil.getResult(que, queParams);
-                        if (!rs.next()) {
-                            String analyseMessage = "'" + refParent + "' not found in 'Dependent On', we'll add it!";
-                            analyseSet.add(analyseMessage);
-                            analyseSum.put(8, analyseSet);
-                            String q = "INSERT INTO FO_CUSTOMIZATION_FIELD (DISPLAY_NAME, DATA_TYPE, FIELD_NO, ORDER_NO, EXPORTABLE, SEARCHABLE, AVAILABLE) VALUES(?, 'Date', (SELECT nextFieldNo FROM (SELECT MAX(FIELD_NO) + 1 AS nextFieldNo FROM FO_CUSTOMIZATION_FIELD) AS table1), (SELECT nextOrderNo FROM (SELECT MAX(ORDER_NO) + 1 AS nextOrderNo FROM FO_CUSTOMIZATION_FIELD) AS table1), 1, 1, 0)";
-                            String[] qParams = { refParent };
-                            tempQ = con.prepareStatement(q);
-                            tempQ.setString(1, refParent);
-                            String queStr = tempQ.toString();
-                            String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                            if(action.equals("generateTaskSQL")){
-                                if(!sqlQuery.contains(refParent)){
-                                    bufferedWriter.write(finalQueStr+";");
-                                    bufferedWriter.newLine();
-                                }
-                                sqlQuery.add(refParent);
-                            }
-                            // QueryUtil.update(q, qParams);
-                        }
-                        String refParentQuery = "SELECT CONCAT('FO_CUSTOM_FIELD_C', FIELD_ID) AS NEW_FIELD FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN (?)";
-                        String[] refParentQueryParams = { refParent };
-                        ResultSet res = QueryUtil.getResult(refParentQuery, refParentQueryParams);
-                        if (res.next()){
-                            refField = res.getString("NEW_FIELD"); //FO_CUSTOM_FIELD_C...
-                            refParent = null;
-                        }
+
+                    if(refParent.equals("-1")){
+                        refField = "-1";
                     }
-                    else if(refParent.indexOf("Multiple") != -1 && refParent.equalsIgnoreCase("Multiple Checklist")){
-                        refParent = "MULTIPLE_CHECKLIST";
+                    else{
                         refField = "";
-                    }
-                    else if(refParent.indexOf("Task") != -1 && refParent.equalsIgnoreCase("Task Checklist")){
-                        refParent = "TASK_CHECKLIST";
-                        if(refField.equals("")){
-                            String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
+                        if(orderSave.indexOf(10) < columns.length)
+                            refField = columns[orderSave.indexOf(10)];
+                        if(refParent.equals("")){
+                            String analyseMessage = "Note: Empty value for 'Dependent On' in " + lineCount + suffix + " row, Please mention it!";
                             analyseSet.add(analyseMessage);
                             analyseSum.put(8, analyseSet);
                         }
-                        else{
-                            String que = "SELECT TASK_ID FROM SM_TASK_CHECKLIST WHERE TASK LIKE '%" + refField + "%'";
-                            ResultSet rs = QueryUtil.getResult(que, null);
-                            if(rs.next())
-                                refField = rs.getString("TASK_ID");
+                        else if (refParent.indexOf("Project") != -1) {
+                            refParent = UpIfLower(refParent);
+                            String que = "SELECT FIELD_ID FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN (?)";
+                            String[] queParams = { refParent };
+                            ResultSet rs = QueryUtil.getResult(que, queParams);
+                            if (!rs.next()) {
+                                String analyseMessage = "'" + refParent + "' not found in 'Dependent On', we'll add it!";
+                                analyseSet.add(analyseMessage);
+                                analyseSum.put(8, analyseSet);
+                                String q = "INSERT INTO FO_CUSTOMIZATION_FIELD (DISPLAY_NAME, DATA_TYPE, FIELD_NO, ORDER_NO, EXPORTABLE, SEARCHABLE, AVAILABLE) VALUES(?, 'Date', (SELECT nextFieldNo FROM (SELECT MAX(FIELD_NO) + 1 AS nextFieldNo FROM FO_CUSTOMIZATION_FIELD) AS table1), (SELECT nextOrderNo FROM (SELECT MAX(ORDER_NO) + 1 AS nextOrderNo FROM FO_CUSTOMIZATION_FIELD) AS table1), 1, 1, 0)";
+                                String[] qParams = { refParent };
+                                tempQ = con.prepareStatement(q);
+                                tempQ.setString(1, refParent);
+                                String queStr = tempQ.toString();
+                                String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
+                                if(action.equals("generateTaskSQL")){
+                                    if(!sqlQuery.contains(refParent)){
+                                        bufferedWriter.write(finalQueStr+";");
+                                        bufferedWriter.newLine();
+                                    }
+                                    sqlQuery.add(refParent);
+                                }
+                                // QueryUtil.update(q, qParams);
+                            }
+                            String refParentQuery = "SELECT CONCAT('FO_CUSTOM_FIELD_C', FIELD_ID) AS NEW_FIELD FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN (?)";
+                            String[] refParentQueryParams = { refParent };
+                            ResultSet res = QueryUtil.getResult(refParentQuery, refParentQueryParams);
+                            if (res.next()){
+                                refField = res.getString("NEW_FIELD"); //FO_CUSTOM_FIELD_C...
+                                refParent = null;
+                            }
                         }
-                    }
-                    else if(refParent.indexOf("Equipment") != -1 && refParent.equalsIgnoreCase("Equipment Checklist")){
-                        refParent = "EQUIPMENT_CHECKLIST";
-                        if(refField.equals("")){
-                            String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
-                            analyseSet.add(analyseMessage);
-                            analyseSum.put(8, analyseSet);
-                        }else{
-                            String que = "SELECT EQUIPMENT_ID FROM SM_EQUIPMENT_CHECKLIST WHERE EQUIPMENT_NAME LIKE '%" + refField + "%'";
-                            ResultSet rs = QueryUtil.getResult(que, null);
-                            if(rs.next())
-                                refField = rs.getString("EQUIPMENT_ID");
+                        else if(refParent.indexOf("Multiple") != -1 && refParent.equalsIgnoreCase("Multiple Checklist")){
+                            refParent = "MULTIPLE_CHECKLIST";
+                            refField = "";
                         }
-                    }
-                    else if(refParent.indexOf("Document") != -1 && refParent.equalsIgnoreCase("Document Checklist")){
-                        refParent = "DOCUMENT_CHECKLIST";
-                        if(refField.equals("")){
-                            String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
-                            analyseSet.add(analyseMessage);
-                            analyseSum.put(8, analyseSet);
+                        else if(refParent.indexOf("Task") != -1 && refParent.equalsIgnoreCase("Task Checklist")){
+                            refParent = "TASK_CHECKLIST";
+                            if(refField.equals("")){
+                                String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
+                                analyseSet.add(analyseMessage);
+                                analyseSum.put(8, analyseSet);
+                            }
+                            else{
+                                String que = "SELECT TASK_ID FROM SM_TASK_CHECKLIST WHERE TASK LIKE '%" + refField + "%'";
+                                ResultSet rs = QueryUtil.getResult(que, null);
+                                if(rs.next())
+                                    refField = rs.getString("TASK_ID");
+                            }
                         }
-                        else{
-                            String que = "SELECT DOCUMENT_ID FROM SM_DOCUMENT_CHECKLIST WHERE DOCUMENT_NAME LIKE '%" + refField + "%'";
-                            ResultSet rs = QueryUtil.getResult(que, null);
-                            if(rs.next())
-                                refField = rs.getString("DOCUMENT_ID");
+                        else if(refParent.indexOf("Equipment") != -1 && refParent.equalsIgnoreCase("Equipment Checklist")){
+                            refParent = "EQUIPMENT_CHECKLIST";
+                            if(refField.equals("")){
+                                String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
+                                analyseSet.add(analyseMessage);
+                                analyseSum.put(8, analyseSet);
+                            }else{
+                                String que = "SELECT EQUIPMENT_ID FROM SM_EQUIPMENT_CHECKLIST WHERE EQUIPMENT_NAME LIKE '%" + refField + "%'";
+                                ResultSet rs = QueryUtil.getResult(que, null);
+                                if(rs.next())
+                                    refField = rs.getString("EQUIPMENT_ID");
+                            }
                         }
-                    }
-                    else if(refParent.indexOf("Picture") != -1 && refParent.equalsIgnoreCase("Picture Checklist")){
-                        refParent = "PICTURE_CHECKLIST";
-                        if(refField.equals("")){
-                            String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
-                            analyseSet.add(analyseMessage);
-                            analyseSum.put(8, analyseSet);
+                        else if(refParent.indexOf("Document") != -1 && refParent.equalsIgnoreCase("Document Checklist")){
+                            refParent = "DOCUMENT_CHECKLIST";
+                            if(refField.equals("")){
+                                String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
+                                analyseSet.add(analyseMessage);
+                                analyseSum.put(8, analyseSet);
+                            }
+                            else{
+                                String que = "SELECT DOCUMENT_ID FROM SM_DOCUMENT_CHECKLIST WHERE DOCUMENT_NAME LIKE '%" + refField + "%'";
+                                ResultSet rs = QueryUtil.getResult(que, null);
+                                if(rs.next())
+                                    refField = rs.getString("DOCUMENT_ID");
+                            }
                         }
-                        else{
-                            String que = "SELECT PICTURE_ID FROM SM_PICTURE_CHECKLIST WHERE TITLE LIKE '%" + refField + "%'";
-                            ResultSet rs = QueryUtil.getResult(que, null);
-                            if(rs.next())
-                                refField = rs.getString("PICTURE_ID");
+                        else if(refParent.indexOf("Picture") != -1 && refParent.equalsIgnoreCase("Picture Checklist")){
+                            refParent = "PICTURE_CHECKLIST";
+                            if(refField.equals("")){
+                                String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
+                                analyseSet.add(analyseMessage);
+                                analyseSum.put(8, analyseSet);
+                            }
+                            else{
+                                String que = "SELECT PICTURE_ID FROM SM_PICTURE_CHECKLIST WHERE TITLE LIKE '%" + refField + "%'";
+                                ResultSet rs = QueryUtil.getResult(que, null);
+                                if(rs.next())
+                                    refField = rs.getString("PICTURE_ID");
+                            }
                         }
-                    }
-                    else if(refParent.indexOf("Secondary") != -1 && refParent.equalsIgnoreCase("Secondary Checklist")){
-                        refParent = "SECONDRY_CHECKLIST";
-                        if(refField.equals("")){
-                            String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
-                            analyseSet.add(analyseMessage);
-                            analyseSum.put(8, analyseSet);
+                        else if(refParent.indexOf("Secondary") != -1 && refParent.equalsIgnoreCase("Secondary Checklist")){
+                            refParent = "SECONDRY_CHECKLIST";
+                            if(refField.equals("")){
+                                String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
+                                analyseSet.add(analyseMessage);
+                                analyseSum.put(8, analyseSet);
+                            }
+                            else{
+                                String que = "SELECT ITEM_ID FROM SM_SECONDRY_CHECKLIST WHERE ITEM_NAME LIKE '%" + refField + "%'";
+                                ResultSet rs = QueryUtil.getResult(que, null);
+                                if(rs.next())
+                                    refField = rs.getString("ITEM_ID");
+                            }
                         }
-                        else{
-                            String que = "SELECT ITEM_ID FROM SM_SECONDRY_CHECKLIST WHERE ITEM_NAME LIKE '%" + refField + "%'";
-                            ResultSet rs = QueryUtil.getResult(que, null);
-                            if(rs.next())
-                                refField = rs.getString("ITEM_ID");
+                        else {
+                            refParent = null;
+                            refField = "GRAND_STORE_OPENING_DATE";
                         }
-                    }
-                    else {
-                        refParent = null;
-                        refField = "GRAND_STORE_OPENING_DATE";
                     }
                 }
                 i++;
@@ -764,7 +773,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 ResultSet rs = QueryUtil.getResult(storeTypeQuery, queryParams);
                 if(rs.next())
                     stID=rs.getString("ST_ID");
-                else if("All".equals(storeNames))
+                else if("All".equals(storeNames) || storeNames.equals("All Stores"))
                     stID="666";
             }
             String groupType = null;
@@ -785,10 +794,15 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             if(orderSave.indexOf(9) < row.length)
                 refFlag = row[orderSave.indexOf(9)];
             if(refFlag.equals("")){
-                HashSet<String> analyseSet = analyseSum.get(9);
-                String analyseMessage = "Note: Empty value for 'Timing trigger for task' in " + lineCount + suffix + " row!";
-                analyseSet.add(analyseMessage);
-                analyseSum.put(9, analyseSet);
+                if(refParent != null && (refParent.equals("-1"))){
+                    refFlag = "-1";
+                }
+                else{
+                    HashSet<String> analyseSet = analyseSum.get(9);
+                    String analyseMessage = "Note: Empty value for 'Timing trigger for task' in " + lineCount + suffix + " row!";
+                    analyseSet.add(analyseMessage);
+                    analyseSum.put(9, analyseSet);
+                }     
             }else if(refFlag.indexOf("omple") != -1)
                 refFlag = "Complete";
             else if(refFlag.indexOf("tart") != -1){
@@ -800,13 +814,18 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             if(orderSave.indexOf(11) < row.length)
                 depFlag = row[orderSave.indexOf(11)];
             if(depFlag.equals("")){
-                HashSet<String> analyseSet = analyseSum.get(11);
-                String analyseMessage = "Note: Empty value for 'Initialize Dependency' in " + lineCount + suffix + " row!";
-                analyseSet.add(analyseMessage);
-                analyseSum.put(11, analyseSet);
+                if((refFlag.equals("-1"))){
+                    depFlag = "1";
+                }
+                else{
+                    HashSet<String> analyseSet = analyseSum.get(11);
+                    String analyseMessage = "Note: Empty value for 'Initialize Dependency' in " + lineCount + suffix + " row!";
+                    analyseSet.add(analyseMessage);
+                    analyseSum.put(11, analyseSet);
+                }
             }else if("Yes".equals(depFlag))
                 depFlag = "Y";
-            else 
+            else if("No".equals(depFlag))
                 depFlag = "N";
             String startDate = "";
             if(orderSave.indexOf(12) < row.length)
@@ -818,6 +837,8 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 startFlag = "After";
             else if("Days prior".equals(startFlag))
                 startFlag = "Prior";
+            else if(refFlag.equals("-1"))
+                startFlag = "NULL";
 
             String scheduleDate = "";
             if(orderSave.indexOf(14) < row.length)
@@ -829,20 +850,22 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 scheduleFlag = "After";
             else if("Days prior".equals(scheduleFlag))
                 scheduleFlag = "Prior";
+            else if(refFlag.equals("-1"))
+                scheduleFlag = "NULL";
 
             if(startDate.equals("")){
                 HashSet<String> analyseSet = analyseSum.get(12);
                 String analyseMessage = "Note: Empty value for 'Start Date' in " + lineCount + suffix + " row!";
                 analyseSet.add(analyseMessage);
                 analyseSum.put(12, analyseSet);
-                startDate = "0";
+                startDate = "NULL";
             }
             if(scheduleDate.equals("")){
                 HashSet<String> analyseSet = analyseSum.get(14);
                 String analyseMessage = "Note: Empty value for 'Completion Date' in " + lineCount + suffix + " row!";
                 analyseSet.add(analyseMessage);
                 analyseSum.put(14, analyseSet);
-                scheduleDate = "0";
+                scheduleDate = "NULL";
             }
             if(startFlag.equals("")){
                 HashSet<String> analyseSet = analyseSum.get(13);
@@ -872,13 +895,17 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 completionRem = "";
                 if(orderSave.indexOf(17) < row.length)
                     completionRem = row[orderSave.indexOf(17)];
+                
                 if(!startRem.equals("") && !completionRem.equals("")){
                     if(Integer.parseInt(startRem) < Integer.parseInt(completionRem)){
-                    HashSet<String> analyseSet = analyseSum.get(17);
+                        HashSet<String> analyseSet = analyseSum.get(17);
                         String analyseMessage = "Note: Reminder Schedule Completion should be greater than Reminder Schedule Start in " + lineCount + suffix + " row!";
                         analyseSet.add(analyseMessage);
                         analyseSum.put(17, analyseSet);
                     }
+                }else{
+                    startRem = "NULL";
+                    completionRem = "NULL";
                 }
             }
             String webUrl = null;
