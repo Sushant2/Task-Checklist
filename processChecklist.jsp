@@ -16,7 +16,7 @@
 
 <html>
     <head>
-        <title>Checklist Automation</title>
+        <title>Task Checklist Automation</title>
         <link id="fav" rel="icon" type="image/x-icon" href="checklistFavicon.png">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
@@ -611,7 +611,6 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 else if (orderSave.get(i) == 8) {
                     HashSet<String> analyseSet = analyseSum.get(8);
                     refParent = "";
-
                     if(orderSave.indexOf(8) < columns.length){
                         refParent = columns[orderSave.indexOf(8)];
                         if(refParent.contains("Timeless"))
@@ -794,7 +793,6 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             String refFlag = "";
             if(orderSave.indexOf(9) < row.length)
                 refFlag = row[orderSave.indexOf(9)];
-                
             if(refFlag.equals("")){
                 if(refParent != null && (refParent.equals("-1"))){
                     refFlag = "-1";
@@ -807,7 +805,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 }     
             }else if(refFlag.indexOf("omple") != -1)
                 refFlag = "Complete";
-            }else if(refFlag.indexOf("tart") != -1){
+            else if(refFlag.indexOf("tart") != -1){
                 refFlag = "Start";
             }else if(refFlag.indexOf("nd") != -1){
                 refFlag = "End";
@@ -815,7 +813,6 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             String depFlag = "";
             if(orderSave.indexOf(11) < row.length)
                 depFlag = row[orderSave.indexOf(11)];
-                
             if(depFlag.equals("")){
                 if((refFlag.equals("-1"))){
                     depFlag = "1";
@@ -826,7 +823,6 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     analyseSet.add(analyseMessage);
                     analyseSum.put(11, analyseSet);
                 }
-
             }else if("Yes".equals(depFlag))
                 depFlag = "Y";
             else if("No".equals(depFlag))
@@ -834,13 +830,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             String startDate = "";
             if(orderSave.indexOf(12) < row.length)
                 startDate = row[orderSave.indexOf(12)];
-            else
-                startDate = "NULL";
-                
             String startFlag = "";
-            if(orderSave.indexOf(13) < row.length){
+            if(orderSave.indexOf(13) < row.length)
                 startFlag = row[orderSave.indexOf(13)];
-                
             if("Days after".equals(startFlag))
                 startFlag = "After";
             else if("Days prior".equals(startFlag))
@@ -851,13 +843,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             String scheduleDate = "";
             if(orderSave.indexOf(14) < row.length)
                 scheduleDate = row[orderSave.indexOf(14)];
-            else
-                scheduleDate = "NULL";
-                
             String scheduleFlag = "";
-            if(orderSave.indexOf(15) < row.length){
+            if(orderSave.indexOf(15) < row.length)
                 scheduleFlag = row[orderSave.indexOf(15)];
-                
             if("Days after".equals(scheduleFlag))
                 scheduleFlag = "After";
             else if("Days prior".equals(scheduleFlag))
@@ -865,33 +853,33 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             else if(refFlag.equals("-1"))
                 scheduleFlag = "NULL";
 
-            if(startDate.equals("") && refParent != "-1"){
+            if(startDate.equals("")){
                 HashSet<String> analyseSet = analyseSum.get(12);
                 String analyseMessage = "Note: Empty value for 'Start Date' in " + lineCount + suffix + " row!";
                 analyseSet.add(analyseMessage);
                 analyseSum.put(12, analyseSet);
                 startDate = "NULL";
             }
-            if(scheduleDate.equals("") && refParent != "-1"){
+            if(scheduleDate.equals("")){
                 HashSet<String> analyseSet = analyseSum.get(14);
                 String analyseMessage = "Note: Empty value for 'Completion Date' in " + lineCount + suffix + " row!";
                 analyseSet.add(analyseMessage);
                 analyseSum.put(14, analyseSet);
                 scheduleDate = "NULL";
             }
-            if(startFlag.equals("") && refParent != "-1"){
+            if(startFlag.equals("")){
                 HashSet<String> analyseSet = analyseSum.get(13);
                 String analyseMessage = "Note: Empty value for 'Start prior to or after' in " + lineCount + suffix + " row!";
                 analyseSet.add(analyseMessage);
                 analyseSum.put(13, analyseSet);
             }
-            if(scheduleFlag.equals("") && refParent != "-1"){
+            if(scheduleFlag.equals("")){
                 HashSet<String> analyseSet = analyseSum.get(15);
                 String analyseMessage = "Note: Empty value for 'Schedule prior to or after' in " + lineCount + suffix + " row!";
                 analyseSet.add(analyseMessage);
                 analyseSum.put(15, analyseSet);
             }
-            if(!startDate.equals("") && !scheduleDate.equals("") && !startFlag.equals("") && !scheduleFlag.equals("") && startDate != "NULL" && scheduleDate != "NULL" && startFlag != "NULL" && scheduleFlag != "NULL"){
+            if(!startDate.equals("") && !scheduleDate.equals("") && !startFlag.equals("") && !scheduleFlag.equals("")){
                 if((startFlag.equals("Prior") && scheduleFlag.equals("Prior") && Integer.parseInt(startDate) < Integer.parseInt(scheduleDate)) || (startFlag.equals("After") && scheduleFlag.equals("After") &&  Integer.parseInt(scheduleDate) < Integer.parseInt(startDate)) || (startFlag.equals("After") && scheduleFlag.equals("Prior"))){
                     HashSet<String> analyseSet = analyseSum.get(15);
                     String analyseMessage = "Note: Schedule Completion should be greater than Schedule Start in " + lineCount + suffix + " row!";
@@ -901,15 +889,13 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             }
             String startRem = null, completionRem = null;
             if(orderSave.size()>16){
-                // startRem = "";completionRem = "";
+                startRem = "";
                 if(orderSave.indexOf(16) < row.length)
                     startRem = row[orderSave.indexOf(16)];
-                else
-                    startRem = "NULL";
-                
+                completionRem = "";
                 if(orderSave.indexOf(17) < row.length)
                     completionRem = row[orderSave.indexOf(17)];
-                    
+                
                 if(!startRem.equals("") && !completionRem.equals("")){
                     if(Integer.parseInt(startRem) < Integer.parseInt(completionRem)){
                         HashSet<String> analyseSet = analyseSum.get(17);
