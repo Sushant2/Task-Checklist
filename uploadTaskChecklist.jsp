@@ -4,7 +4,7 @@
 <head>
     <title>Task Checklist Automation</title>
     <link id="fav" rel="icon" type="image/x-icon" href="checklistFavicon.png">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">          
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -80,12 +80,14 @@
         .form-analyse:hover {
             background-color: #c37c27;
         }
+
         .bulb-container {
             position: fixed;
             top: 20px;
             right: 20px;
             cursor: pointer;
         }
+
         .popup {
             position: fixed;
             top: 50px;
@@ -99,9 +101,12 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             z-index: 1;
         }
+
         .bulb-icon {
-            color: #000000; /* Change to the desired color */
+            color: #000000;
+            /* Change to the desired color */
         }
+
         li {
             font-size: 15px;
             line-height: 1;
@@ -138,8 +143,9 @@
             <li>Convert your Checklist Sheet into CSV Format for compatibility.</li>
             <li>Ensure only a single row containing Column Names is present.</li>
             <li>Ensure that Checklist Sheet does not contain completely empty rows.</li>
+            <li>Remove unnecessary column(s).</li>
         </div>
-    </div>    
+    </div>
 </body>
 <script>
     function sendAtt(myAct) {
@@ -148,7 +154,7 @@
             alert("Please choose a file before proceeding.");
             return false;
         }
-        else{
+        else {
             myForm.action = "processChecklist.jsp?act=" + myAct;
             myForm.submit();
             return true;
