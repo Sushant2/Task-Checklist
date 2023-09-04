@@ -159,7 +159,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
         <br>
         <hr>
     <%}else if(action.equals("generateTaskSQL")){
-        String wslPath = "/home/sushant/builddocs/taskAutomationSQL.sql";
+        String wslPath = System.getProperty("user.home") + "/builddocs/taskAutomationSQL.sql";
         myNewFile = new File(wslPath);
       // Create the file if it doesn't exist
         if (!myNewFile.exists()) {
