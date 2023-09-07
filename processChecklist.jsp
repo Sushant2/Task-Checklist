@@ -613,7 +613,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     refParent = "";
                     if(orderSave.indexOf(8) < columns.length){
                         refParent = columns[orderSave.indexOf(8)];
-                        if(refParent.contains("Timeless"))
+                        if(refParent.contains("Timeless") || refParent.contains("None"))
                             refParent = "-1";
                     }
 
@@ -781,7 +781,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 groupType = "";
             else if(!columns[orderSave.indexOf(4)].equals(""))
                 groupType = row[orderSave.indexOf(4)];
-            
+
             String franAccess = row[orderSave.indexOf(5)];
             if(franAccess.equals(""))
                 franAccess = "Update Status";
