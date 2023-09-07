@@ -777,10 +777,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     stID="666";
             }
             String groupType = null;
-            if(Character.isDigit(columns[orderSave.indexOf(4)].charAt(0)))
+            if(columns[orderSave.indexOf(4)].length() > 0 && Character.isDigit(columns[orderSave.indexOf(4)].charAt(0)))
                 groupType = "";
             else if(!columns[orderSave.indexOf(4)].equals(""))
                 groupType = row[orderSave.indexOf(4)];
+            
             String franAccess = row[orderSave.indexOf(5)];
             if(franAccess.equals(""))
                 franAccess = "Update Status";
