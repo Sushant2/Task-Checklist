@@ -881,7 +881,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 analyseSum.put(15, analyseSet);
             }
             if(!startDate.equals("") && !scheduleDate.equals("") && !startFlag.equals("") && !scheduleFlag.equals("")){
-                if((startFlag.equals("Prior") && scheduleFlag.equals("Prior") && Integer.parseInt(startDate) < Integer.parseInt(scheduleDate)) || (startFlag.equals("After") && scheduleFlag.equals("After") &&  Integer.parseInt(scheduleDate) < Integer.parseInt(startDate)) || (startFlag.equals("After") && scheduleFlag.equals("Prior"))){
+                if((startDate != "NULL" && scheduleDate != "NULL") && (startFlag.equals("Prior") && scheduleFlag.equals("Prior") && Integer.parseInt(startDate) < Integer.parseInt(scheduleDate)) || (startFlag.equals("After") && scheduleFlag.equals("After") &&  Integer.parseInt(scheduleDate) < Integer.parseInt(startDate)) || (startFlag.equals("After") && scheduleFlag.equals("Prior"))){
                     HashSet<String> analyseSet = analyseSum.get(15);
                     String analyseMessage = "Note: Schedule Completion should be greater than Schedule Start in " + lineCount + suffix + " row!";
                     analyseSet.add(analyseMessage);
