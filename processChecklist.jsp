@@ -471,11 +471,6 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         analyseSet.add(analyseMessage);
                         analyseSum.put(4, analyseSet);
                     }
-                    else if(Character.isDigit(phase.charAt(0))){
-                        String analyseMessage = "'" + phase + "' not found in 'Group', Please correct it!";
-                        analyseSet.add(analyseMessage);
-                        analyseSum.put(4, analyseSet);
-                    }
                     else{
                         phase = UpIfLower(phase);
                         String que = "SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME = ?";
