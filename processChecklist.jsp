@@ -403,7 +403,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             ResultSet rs1 = QueryUtil.getResult(que1, queryParams);
                             ResultSet rs2 = QueryUtil.getResult(que2, queryParams);
                             ResultSet rs3 = QueryUtil.getResult(que3, queryParams);
-                            if (!rs1.next() && !rs2.next() && !rs3.next()) {
+                            if (!rs1.next() && !rs2.next() && !rs3.next() && !col.equals("Franchise User")) {
                                 String analyseMessage = "'" + col + "' not found in 'Contact(s)', we'll add it!";
                                 analyseSet.add(analyseMessage);
                                 analyseSum.put(2, analyseSet);
@@ -471,11 +471,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         analyseSet.add(analyseMessage);
                         analyseSum.put(4, analyseSet);
                     }
-                    else if(Character.isDigit(phase.charAt(0))){
-                        String analyseMessage = "'" + phase + "' not found in 'Group', Please correct it!";
-                        analyseSet.add(analyseMessage);
-                        analyseSum.put(4, analyseSet);
-                    }
+                    // else if(Character.isDigit(phase.charAt(0))){
+                    //     String analyseMessage = "'" + phase + "' not found in 'Group', Please correct it!";
+                    //     analyseSet.add(analyseMessage);
+                    //     analyseSum.put(4, analyseSet);
+                    // }
                     else{
                         phase = UpIfLower(phase);
                         String que = "SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME = ?";
@@ -629,7 +629,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             analyseSet.add(analyseMessage);
                             analyseSum.put(8, analyseSet);
                         }
-                        else if (refParent.indexOf("Project") != -1) {
+                        else if (!refParent.equals("") && refParent != null && !refParent.startsWith("Multiple") && !refParent.startsWith("Task") && !refParent.startsWith("Equipment") && !refParent.startsWith("Document") && !refParent.startsWith("Picture") && !refParent.startsWith("Secondary") && !refParent.startsWith("Expected Opening Date")) {
                             refParent = UpIfLower(refParent);
                             String que = "SELECT FIELD_ID FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN (?)";
                             String[] queParams = { refParent };
@@ -777,9 +777,10 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     stID="666";
             }
             String groupType = null;
-            if(columns[orderSave.indexOf(4)].length() > 0 && Character.isDigit(columns[orderSave.indexOf(4)].charAt(0)))
-                groupType = "";
-            else if(!columns[orderSave.indexOf(4)].equals(""))
+            // if(columns[orderSave.indexOf(4)].length() > 0 && Character.isDigit(columns[orderSave.indexOf(4)].charAt(0)))
+            //     groupType = "";
+            // else 
+            if(!columns[orderSave.indexOf(4)].equals(""))
                 groupType = row[orderSave.indexOf(4)];
 
             String franAccess = row[orderSave.indexOf(5)];
@@ -834,9 +835,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             String startFlag = "";
             if(orderSave.indexOf(13) < row.length)
                 startFlag = row[orderSave.indexOf(13)];
-            if("Days after".equals(startFlag))
+            if(("Days after".equalsIgnoreCase(startFlag)) || (startFlag.indexOf("fter") != -1))
                 startFlag = "After";
-            else if("Days prior".equals(startFlag))
+            else if(("Days prior".equalsIgnoreCase(startFlag)) || (startFlag.indexOf("rior") != -1))
                 startFlag = "Prior";
             else if(refFlag.equals("-1"))
                 startFlag = "NULL";
@@ -847,9 +848,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             String scheduleFlag = "";
             if(orderSave.indexOf(15) < row.length)
                 scheduleFlag = row[orderSave.indexOf(15)];
-            if("Days after".equals(scheduleFlag))
+            if(("Days after".equalsIgnoreCase(scheduleFlag)) || (scheduleFlag.indexOf("fter") != -1))
                 scheduleFlag = "After";
-            else if("Days prior".equals(scheduleFlag))
+            else if(("Days prior".equalsIgnoreCase(scheduleFlag)) || (scheduleFlag.indexOf("rior") != -1))
                 scheduleFlag = "Prior";
             else if(refFlag.equals("-1"))
                 scheduleFlag = "NULL";
