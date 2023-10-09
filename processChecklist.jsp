@@ -935,8 +935,8 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         analyseSum.put(17, analyseSet);
                     }
                 }else{
-                    startRem = "NULL";
-                    completionRem = "NULL";
+                    startRem = "-1";
+                    completionRem = "-1";
                 }
             }
             String webUrl = null;
