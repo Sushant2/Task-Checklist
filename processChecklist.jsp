@@ -332,6 +332,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 firstLine = false;
                 continue;
             }   
+            System.out.println();
             System.out.println("Line : " + line);
             String[] columns = mySplit(line, ',');
             int i = 0;
@@ -471,11 +472,6 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         analyseSet.add(analyseMessage);
                         analyseSum.put(4, analyseSet);
                     }
-                    // else if(Character.isDigit(phase.charAt(0))){
-                    //     String analyseMessage = "'" + phase + "' not found in 'Group', Please correct it!";
-                    //     analyseSet.add(analyseMessage);
-                    //     analyseSum.put(4, analyseSet);
-                    // }
                     else{
                         phase = UpIfLower(phase);
                         String que = "SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME = ?";
@@ -629,7 +625,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             analyseSet.add(analyseMessage);
                             analyseSum.put(8, analyseSet);
                         }
-                        else if (!refParent.equals("") && refParent != null && !refParent.startsWith("Multiple") && !refParent.startsWith("Task") && !refParent.startsWith("Equipment") && !refParent.startsWith("Document") && !refParent.startsWith("Picture") && !refParent.startsWith("Secondary") && !refParent.startsWith("Expected Opening Date")) {
+                        else if (!refParent.equals("")) {
                             refParent = UpIfLower(refParent);
                             String que = "SELECT FIELD_ID FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN (?)";
                             String[] queParams = { refParent };
@@ -638,20 +634,54 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 String analyseMessage = "'" + refParent + "' not found in 'Dependent On', we'll add it!";
                                 analyseSet.add(analyseMessage);
                                 analyseSum.put(8, analyseSet);
-                                String q = "INSERT INTO FO_CUSTOMIZATION_FIELD (DISPLAY_NAME, DATA_TYPE, FIELD_NO, ORDER_NO, EXPORTABLE, SEARCHABLE, AVAILABLE) VALUES(?, 'Date', (SELECT nextFieldNo FROM (SELECT MAX(FIELD_NO) + 1 AS nextFieldNo FROM FO_CUSTOMIZATION_FIELD) AS table1), (SELECT nextOrderNo FROM (SELECT MAX(ORDER_NO) + 1 AS nextOrderNo FROM FO_CUSTOMIZATION_FIELD) AS table1), 1, 1, 0)";
-                                String[] qParams = { refParent };
-                                tempQ = con.prepareStatement(q);
-                                tempQ.setString(1, refParent);
-                                String queStr = tempQ.toString();
-                                String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                                if(action.equals("generateTaskSQL")){
-                                    if(!sqlQuery.contains(refParent)){
-                                        bufferedWriter.write(finalQueStr+";");
-                                        bufferedWriter.newLine();
+                                String findFieldIdQuery = "SELECT FIELD_ID FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME='' LIMIT 1";
+                                ResultSet rsFFQ = QueryUtil.getResult(findFieldIdQuery, null);
+                                String refFieldId = null;
+                                if (rsFFQ.next())
+                                    refFieldId = rsFFQ.getString("FIELD_ID");
+
+                                if (refFieldId != null && !refFieldId.equals("")) {
+                                    String orderNoQuery = "SELECT MAX(ORDER_NO)+1 AS ORDER_NO FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME!=''";
+                                    ResultSet rsON = QueryUtil.getResult(orderNoQuery, null);
+                                    String orderNo = null;
+                                    if (rsON.next())
+                                        orderNo = rsON.getString("ORDER_NO");
+                                
+                                    String updateRefQuery = "UPDATE FO_CUSTOMIZATION_FIELD SET DISPLAY_NAME=?, DATA_TYPE='Date', ORDER_NO=?, AVAILABLE=0, MILESTONE_APPLICABLE='Y' WHERE FIELD_ID=?";
+                                    String[] qParams = {refParent, orderNo, refFieldId};
+                                    
+                                    tempQ = con.prepareStatement(updateRefQuery);
+                                    tempQ.setString(1, refParent);
+                                    tempQ.setString(2, orderNo);
+                                    tempQ.setString(3, refFieldId);
+                                    String queStr = tempQ.toString();
+                                    String finalQueStr = queStr.substring(queStr.indexOf(": ") + 2, queStr.length());
+                                    
+                                    if (action.equals("generateTaskSQL")) {
+                                        if (!sqlQuery.contains(refParent)) {
+                                            bufferedWriter.write(finalQueStr + ";");
+                                            bufferedWriter.newLine();
+                                        }
+                                        sqlQuery.add(refParent);
                                     }
-                                    sqlQuery.add(refParent);
+                                    // QueryUtil.update(q, qParams);
                                 }
-                                // QueryUtil.update(q, qParams);
+                                else{
+                                    String q = "INSERT INTO FO_CUSTOMIZATION_FIELD (DISPLAY_NAME, DATA_TYPE, FIELD_NO, ORDER_NO, EXPORTABLE, SEARCHABLE, AVAILABLE) VALUES(?, 'Date', (SELECT nextFieldNo FROM (SELECT MAX(FIELD_NO) + 1 AS nextFieldNo FROM FO_CUSTOMIZATION_FIELD) AS table1), (SELECT nextOrderNo FROM (SELECT MAX(ORDER_NO) + 1 AS nextOrderNo FROM FO_CUSTOMIZATION_FIELD) AS table1), 1, 1, 0)";
+                                    String[] qParams = { refParent };
+                                    tempQ = con.prepareStatement(q);
+                                    tempQ.setString(1, refParent);
+                                    String queStr = tempQ.toString();
+                                    String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
+                                    if(action.equals("generateTaskSQL")){
+                                        if(!sqlQuery.contains(refParent)){
+                                            bufferedWriter.write(finalQueStr+";");
+                                            bufferedWriter.newLine();
+                                        }
+                                        sqlQuery.add(refParent);
+                                    }
+                                    // QueryUtil.update(q, qParams);
+                                }
                             }
                             String refParentQuery = "SELECT CONCAT('FO_CUSTOM_FIELD_C', FIELD_ID) AS NEW_FIELD FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN (?)";
                             String[] refParentQueryParams = { refParent };
@@ -906,8 +936,8 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         analyseSum.put(17, analyseSet);
                     }
                 }else{
-                    startRem = "NULL";
-                    completionRem = "NULL";
+                    startRem = "-1";
+                    completionRem = "-1";
                 }
             }
             String webUrl = null;
