@@ -864,9 +864,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             String startFlag = "";
             if(orderSave.indexOf(13) < row.length)
                 startFlag = row[orderSave.indexOf(13)];
-            if("Days after".equals(startFlag))
+            if(startFlag.contains("fter"))
                 startFlag = "After";
-            else if("Days prior".equals(startFlag))
+            else if(startFlag.contains("rior"))
                 startFlag = "Prior";
             else if(refFlag.equals("-1"))
                 startFlag = "NULL";
@@ -877,9 +877,9 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
             String scheduleFlag = "";
             if(orderSave.indexOf(15) < row.length)
                 scheduleFlag = row[orderSave.indexOf(15)];
-            if("Days after".equals(scheduleFlag))
+            if(scheduleFlag.contains("fter"))
                 scheduleFlag = "After";
-            else if("Days prior".equals(scheduleFlag))
+            else if(scheduleFlag.contains("rior"))
                 scheduleFlag = "Prior";
             else if(refFlag.equals("-1"))
                 scheduleFlag = "NULL";
