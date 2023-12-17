@@ -125,7 +125,7 @@
                     type="submit" value="Analyse">
             </div>
             <div class="form-group">
-                <input type="hidden" id="actGenerateSQL" name="act" value="generateTaskSQL">
+                <input type="hidden" id="actGenerateSQL" name="act" value="generateSecondrySQL">
                 <input onclick='return sendAtt(document.getElementById("actGenerateSQL").value);' class="form-submit"
                     type="submit" value="Generate SQL">
             </div>

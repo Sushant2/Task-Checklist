@@ -8,6 +8,8 @@
 <%@ page import="java.util.StringTokenizer"%>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.sql.PreparedStatement"%>
+<%@ page import="java.text.SimpleDateFormat"%>
+<%@ page import="java.util.Date"%>
 <%@ page import="org.apache.commons.fileupload.*"%>
 <%@ page import="org.apache.commons.fileupload.disk.*"%>
 <%@ page import="org.apache.commons.fileupload.servlet.*"%>
@@ -26,7 +28,7 @@
             background-color: #f5f5f5;
         }
         .headA{
-            background-color: rgb(214, 146, 43);
+            background-color: #1b8fc8;
             color: white;
             border-radius: 5px;
             margin: auto;
@@ -100,7 +102,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             padding: 2px 5px;
-            background-color: rgb(214, 146, 43);
+            background-color: #1b8fc8;
             color: white;
             border-radius: 3px;
             font-size: 12px;
@@ -113,7 +115,7 @@
 
     </style>
 <%
-String action = request.getParameter("act"); //analyse/generateTaskSQL 
+String action = request.getParameter("act"); //analyse/generateSecondrySQL 
 String contentType = request.getContentType();
 if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) {
     DataInputStream in = new DataInputStream(request.getInputStream());
@@ -158,10 +160,17 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
         <br>
         <br>
         <hr>
-    <%}else if(action.equals("generateTaskSQL")){
-        String wslPath = System.getProperty("user.home") + "/builddocs/taskAutomationSQL.sql";
+    <%}else if(action.equals("generateSecondrySQL")){
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+        String currentDate = dateFormat.format(new Date());
+        String wslPath = System.getProperty("user.home") + "/builddocs/Checklist Automation/secondaryChecklistSQL_" + currentDate + ".sql";
+        // Create the folder if it doesn't exist
+        File folder = new File(System.getProperty("user.home") + "/builddocs/Checklist Automation");
+        if (!folder.exists()) {
+            folder.mkdirs(); 
+        }
+        // Create the file if it doesn't exist
         myNewFile = new File(wslPath);
-      // Create the file if it doesn't exist
         if (!myNewFile.exists()) {
             myNewFile.createNewFile();
         }
@@ -253,15 +262,14 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
     PreparedStatement pst = null; 
     try {
         /* 
-        TASK = 0 RES AREA = 1 CONTACT = 2 STORE = 3 GROUP = 4 FRANCHISEE = 5 PRIORITY = 6 CRITICAL = 7 DEP ON = 8 TIMING = 9 OTHER CHECKLIST = 10 INIT DEP = 11 SCHEDULE_START = 12 SCHEDULE_START_D = 13 SCHEDULE_COMPLETION = 14 SCHEDULE_COMPLETION_D = 15 START_ALERT_DATE = 16 ALERT_DATE = 17 WEB_URL_LINK=18 
-        */
+        TASK = 0 RES AREA = 1 CONTACT = 2 STORE = 3 GROUP = 4 FRANCHISEE = 5 PRIORITY = 6 CRITICAL = 7 DEP ON = 8 TIMING = 9 OTHER CHECKLIST = 10 INIT DEP = 11 SCHEDULE_START = 12 SCHEDULE_START_D = 13 SCHEDULE_COMPLETION = 14 SCHEDULE_COMPLETION_D = 15 START_ALERT_DATE = 16 ALERT_DATE = 17 WEB_URL_LINK=18 DESCRIPTION = 19 SECONDRY_CHECKLIST_ID = 20*/
         ArrayList<String> orderInfoMap = new ArrayList<>(Arrays.asList(
-            "Task", "Responsibility Area(s)", "Contact(s)", "Applicable To Store Type(s)", "Group", "Franchisee Access", "Priority", "Critical Level", "Dependent On", "Timing trigger for task", "Other Checklist task on which this task is dependent", "Initialize Dependency", "SCHEDULE_START", "SCHEDULE_START_D", "SCHEDULE_COMPLETION", "SCHEDULE_COMPLETION_D", "START_ALERT_DATE", "ALERT_DATE", "WEB_URL_LINK"
+            "Task", "Responsibility Area(s)", "Contact(s)", "Applicable To Store Type(s)", "Group", "Franchisee Access", "Priority", "Critical Level", "Dependent On", "Timing trigger for task", "Other Checklist task on which this task is dependent", "Initialize Dependency", "SCHEDULE_START", "SCHEDULE_START_D", "SCHEDULE_COMPLETION", "SCHEDULE_COMPLETION_D", "START_ALERT_DATE", "ALERT_DATE", "WEB_URL_LINK", "Description", "Checklist Name"
         ));
         HashMap<Integer, HashSet<String>> analyseSum = new HashMap<>();
         HashSet<String> sqlQuery = new HashSet<>();
         //initializing hashmap
-        for(int i = 0;i<=18;i++)
+        for(int i = 0;i<=20;i++)
             analyseSum.put(i, new HashSet<>());
         StringBuilder contents = new StringBuilder();
         List<String[]> data = new ArrayList<>();
@@ -275,10 +283,10 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
         String refParent = null;
         String refField = null;
         String contactNames = null;
-        String secondryId = null;
+        String secondryChecklistId = null;
         ArrayList<Integer> orderSave = new ArrayList<Integer>();
         /* Our Column Order Assumption : 
-        TASK = 0 RES AREA = 1 CONTACT = 2 STORE = 3 GROUP = 4 FRANCHISEE = 5 PRIORITY = 6 CRITICAL = 7 DEP ON = 8 TIMING = 9 OTHER CHECKLIST = 10 INIT DEP = 11 SCHEDULE_START = 12 SCHEDULE_START_D = 13 SCHEDULE_COMPLETION = 14 SCHEDULE_COMPLETION_D = 15 START_ALERT_DATE = 16 ALERT_DATE = 17 WEB_URL_LINK=18*/
+        TASK = 0 RES AREA = 1 CONTACT = 2 STORE = 3 GROUP = 4 FRANCHISEE = 5 PRIORITY = 6 CRITICAL = 7 DEP ON = 8 TIMING = 9 OTHER CHECKLIST = 10 INIT DEP = 11 SCHEDULE_START = 12 SCHEDULE_START_D = 13 SCHEDULE_COMPLETION = 14 SCHEDULE_COMPLETION_D = 15 START_ALERT_DATE = 16 ALERT_DATE = 17 WEB_URL_LINK=18 DESCRIPTION = 19 SECONDRY_CHECKLIST_ID = 20*/
         while ((line = input.readLine()) != null) {
             lineCount++;
             if(firstLine){
@@ -331,12 +339,14 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         orderSave.add(18);
                     else if(colName.indexOf("Description") != -1)
                         orderSave.add(19);
+                    else if(colName.indexOf("Checklist") != -1)
+                        orderSave.add(20);
                 }
                 firstLine = false;
                 continue;
             }   
             System.out.println();
-            System.out.println("Line : " + line);
+            System.out.println("Line" + lineCount +": " + line);
             String[] columns = mySplit(line, ',');
             for(String col : columns)
                 System.out.println("COL  : " + col);
@@ -379,7 +389,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 tempQ.setString(2, col);
                                 String queStr = tempQ.toString();
                                 String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                                if(action.equals("generateTaskSQL")){
+                                if(action.equals("generateSecondrySQL")){
                                     if(!sqlQuery.contains(col)){
                                         bufferedWriter.write(finalQueStr+";");
                                         bufferedWriter.newLine();
@@ -419,7 +429,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 tempQ.setString(1, String.valueOf(col));
                                 String queStr = tempQ.toString();
                                 String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                                if(action.equals("generateTaskSQL")){
+                                if(action.equals("generateSecondrySQL")){
                                     if(!sqlQuery.contains(col)){
                                         bufferedWriter.write(finalQueStr+";");
                                         bufferedWriter.newLine();
@@ -455,7 +465,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 tempQ.setString(1, col);
                                 String queStr = tempQ.toString();
                                 String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                                if(action.equals("generateTaskSQL")){
+                                if(action.equals("generateSecondrySQL")){
                                     if(!sqlQuery.contains(col)){
                                         bufferedWriter.write(finalQueStr+";");
                                         bufferedWriter.newLine();
@@ -492,7 +502,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             tempQ.setString(1, phase);
                             String queStr = tempQ.toString();
                             String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                            if(action.equals("generateTaskSQL")){
+                            if(action.equals("generateSecondrySQL")){
                                 if(!sqlQuery.contains(phase)){
                                     bufferedWriter.write(finalQueStr+";");
                                     bufferedWriter.newLine();
@@ -527,7 +537,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             tempQ.setString(1, franAccess);
                             String queStr = tempQ.toString();
                             String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                            if(action.equals("generateTaskSQL")){
+                            if(action.equals("generateSecondrySQL")){
                                 if(!sqlQuery.contains(franAccess)){
                                     bufferedWriter.write(finalQueStr+";");
                                     bufferedWriter.newLine();
@@ -562,7 +572,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             tempQ.setString(1, priority);
                             String queStr = tempQ.toString();
                             String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                            if(action.equals("generateTaskSQL")){
+                            if(action.equals("generateSecondrySQL")){
                                 if(!sqlQuery.contains(priority)){
                                     bufferedWriter.write(finalQueStr+";");
                                     bufferedWriter.newLine();
@@ -598,7 +608,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             tempQ.setString(1, criLevel);
                             String queStr = tempQ.toString();
                             String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                            if(action.equals("generateTaskSQL")){
+                            if(action.equals("generateSecondrySQL")){
                                 if(!sqlQuery.contains(criLevel)){
                                     bufferedWriter.write(finalQueStr+";");
                                     bufferedWriter.newLine();
@@ -662,7 +672,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                     String queStr = tempQ.toString();
                                     String finalQueStr = queStr.substring(queStr.indexOf(": ") + 2, queStr.length());
                                     
-                                    if (action.equals("generateTaskSQL")) {
+                                    if (action.equals("generateSecondrySQL")) {
                                         if (!sqlQuery.contains(refParent)) {
                                             bufferedWriter.write(finalQueStr + ";");
                                             bufferedWriter.newLine();
@@ -678,7 +688,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                     tempQ.setString(1, refParent);
                                     String queStr = tempQ.toString();
                                     String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
-                                    if(action.equals("generateTaskSQL")){
+                                    if(action.equals("generateSecondrySQL")){
                                         if(!sqlQuery.contains(refParent)){
                                             bufferedWriter.write(finalQueStr+";");
                                             bufferedWriter.newLine();
@@ -774,15 +784,40 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             refField = "GRAND_STORE_OPENING_DATE";
                         }
                     }
-                }else if(orderSave.get(i) == 19){
-                    //for now only retrieving
-                    String secondryName = "Task Checklist";
-                    if(!secondryName.equals("")){
+                }else if(orderSave.get(i) == 20){
+                    HashSet<String> analyseSet = analyseSum.get(20);
+                    String secondaryName = columns[orderSave.indexOf(20)];
+                    if(secondaryName.equals("")){
+                        String analyseMessage = "Note: Empty value for 'Checklist Name' in " + lineCount + suffix + " row!";
+                        analyseSet.add(analyseMessage);
+                        analyseSum.put(20, analyseSet);
+                    }
+                    else{
+                        //check if checklistname is already present in db
                         String que = "SELECT SECONDRY_CHECKLIST_ID FROM SM_SECONDRY_CHECKLIST_TYPE WHERE CHECKLIST_TYPE = ?";
-                        String[] queParams = { secondryName };
+                        String[] queParams = { secondaryName };
                         ResultSet rs = QueryUtil.getResult(que, queParams);
                         if(rs.next())
-                            secondryId = rs.getString("SECONDRY_CHECKLIST_ID");
+                            secondryChecklistId = rs.getString("SECONDRY_CHECKLIST_ID");
+                        else{
+                            //if its not present, add it in db
+                            String analyseMessage = "'" + secondaryName + "' not found under 'Secondary Checklist', we'll add it!";
+                            analyseSet.add(analyseMessage);
+                            analyseSum.put(20, analyseSet);
+                            String q = "INSERT INTO SM_SECONDRY_CHECKLIST_TYPE(CHECKLIST_TYPE, IS_DELETED) VALUES(?, 'N')";
+                            tempQ = con.prepareStatement(q);
+                            tempQ.setString(1, String.valueOf(secondaryName));
+                            String queStr = tempQ.toString();
+                            String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
+                                if(action.equals("generateSecondrySQL")){
+                                    if(!sqlQuery.contains(secondaryName)){
+                                        bufferedWriter.write(finalQueStr+";");
+                                        bufferedWriter.newLine();
+                                    }
+                                    sqlQuery.add(secondaryName);
+                                }
+                                // QueryUtil.update(q, qParams);
+                        }
                     }
                 }
                 i++;
@@ -967,7 +1002,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     description = row[orderSave.indexOf(19)];
             }
             if(orderSave.size() >= 19 && orderSave.indexOf(19) != -1){
-                pst = con.prepareStatement("INSERT INTO SM_SECONDRY_CHECKLIST (ITEM_NAME, ITEM_ID, RESPONSIBILITY_AREA, CONTACT, ST_ID, GROUP_ID, FRANCHISEE_ACCESS, PRIORITY_ID, CRITICAL_LEVEL_ID, REFERENCE_PARENT, REFERENCE_FLAG, REFERENCE_FIELD, DEPENDENCY_FLAG, START_DATE, START_FLAG, SCHEDULE_DATE, SCHEDULE_FLAG, START_ALERT_DATE, ALERT_DATE, DESCRIPTION, SECONDRY_CHECKLIST_ID, IS_DELETED) VALUES (?, NULL, (SELECT GROUP_CONCAT(RESPONSIBILITY_AREA_ID) FROM SM_RESPONSIBILITY_AREA WHERE RESPONSIBILITY_AREA IN ('" + resArea + "')), (SELECT GROUP_CONCAT(CONTACT_INFO) FROM (SELECT USER_NO AS CONTACT_INFO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN ('" + contacts + "') UNION SELECT SUPPLIER_NO AS CONTACT_INFO FROM SUPPLIERS WHERE SUPPLIER_NAME IN ('" + contacts + "') UNION SELECT CONCAT('-', FIELD_ID, 'S') AS CONTACT_INFO FROM FIM_CONTACT_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN ('" + contacts + "')) AS CONTACT),("+stID+"),(SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME IN ('" + groupType + "')), (SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE IN ('" + franAccess + "')), (SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY IN ('" + priority + "')), (SELECT PARENT_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='130320' AND DATA_VALUE IN ('" + criLevel + "')), '" + refParent + "', '"+refFlag+"', '" + refField + "', '"+depFlag+"' ,"+startDate+",('"+startFlag+"'),"+scheduleDate+",('"+scheduleFlag+"'), "+startRem+", "+completionRem+", '"+description+"', "+secondryId+", '"+'N'+"')");
+                pst = con.prepareStatement("INSERT INTO SM_SECONDRY_CHECKLIST (ITEM_NAME, ITEM_ID, RESPONSIBILITY_AREA, CONTACT, ST_ID, GROUP_ID, FRANCHISEE_ACCESS, PRIORITY_ID, CRITICAL_LEVEL_ID, REFERENCE_PARENT, REFERENCE_FLAG, REFERENCE_FIELD, DEPENDENCY_FLAG, START_DATE, START_FLAG, SCHEDULE_DATE, SCHEDULE_FLAG, START_ALERT_DATE, ALERT_DATE, DESCRIPTION, SECONDRY_CHECKLIST_ID, IS_DELETED) VALUES (?, NULL, (SELECT GROUP_CONCAT(RESPONSIBILITY_AREA_ID) FROM SM_RESPONSIBILITY_AREA WHERE RESPONSIBILITY_AREA IN ('" + resArea + "')), (SELECT GROUP_CONCAT(CONTACT_INFO) FROM (SELECT USER_NO AS CONTACT_INFO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN ('" + contacts + "') UNION SELECT SUPPLIER_NO AS CONTACT_INFO FROM SUPPLIERS WHERE SUPPLIER_NAME IN ('" + contacts + "') UNION SELECT CONCAT('-', FIELD_ID, 'S') AS CONTACT_INFO FROM FIM_CONTACT_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN ('" + contacts + "')) AS CONTACT),("+stID+"),(SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME IN ('" + groupType + "')), (SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE IN ('" + franAccess + "')), (SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY IN ('" + priority + "')), (SELECT PARENT_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='130320' AND DATA_VALUE IN ('" + criLevel + "')), '" + refParent + "', '"+refFlag+"', '" + refField + "', '"+depFlag+"' ,"+startDate+",('"+startFlag+"'),"+scheduleDate+",('"+scheduleFlag+"'), "+startRem+", "+completionRem+", '"+description+"', "+secondryChecklistId+", '"+'N'+"')");
             }
             else if(orderSave.size() == 16 && orderSave.indexOf(15) != -1){
                 pst = con.prepareStatement("INSERT INTO SM_TASK_CHECKLIST (TASK, TASK_ID, RESPONSIBILITY_AREA, CONTACT, ST_ID, GROUP_ID, FRANCHISEE_ACCESS, PRIORITY_ID, CRITICAL_LEVEL_ID, REFERENCE_PARENT, REFERENCE_FLAG, REFERENCE_FIELD, DEPENDENCY_FLAG, START_DATE, START_FLAG, SCHEDULE_DATE, SCHEDULE_FLAG) VALUES (?, NULL, (SELECT GROUP_CONCAT(RESPONSIBILITY_AREA_ID) FROM SM_RESPONSIBILITY_AREA WHERE RESPONSIBILITY_AREA IN ('" + resArea + "')), (SELECT GROUP_CONCAT(CONTACT_INFO) FROM (SELECT USER_NO AS CONTACT_INFO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN ('" + contacts + "') UNION SELECT SUPPLIER_NO AS CONTACT_INFO FROM SUPPLIERS WHERE SUPPLIER_NAME IN ('" + contacts + "') UNION SELECT CONCAT('-', FIELD_ID, 'S') AS CONTACT_INFO FROM FIM_CONTACT_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN ('" + contacts + "')) AS CONTACT),("+stID+"),(SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME IN ('" + groupType + "')), (SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE IN ('" + franAccess + "')), (SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY IN ('" + priority + "')), (SELECT PARENT_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='130320' AND DATA_VALUE IN ('" + criLevel + "')), '" + refParent + "', '"+refFlag+"', '" + refField + "', '"+depFlag+"' ,"+startDate+",('"+startFlag+"'),"+scheduleDate+",('"+scheduleFlag+"'))");
@@ -979,7 +1014,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 pst = con.prepareStatement("INSERT INTO SM_TASK_CHECKLIST (TASK, TASK_ID, RESPONSIBILITY_AREA, CONTACT, ST_ID, GROUP_ID, FRANCHISEE_ACCESS, PRIORITY_ID, CRITICAL_LEVEL_ID, REFERENCE_PARENT, REFERENCE_FLAG, REFERENCE_FIELD, DEPENDENCY_FLAG, START_DATE, START_FLAG, SCHEDULE_DATE, SCHEDULE_FLAG, START_ALERT_DATE, ALERT_DATE) VALUES (?, NULL, (SELECT GROUP_CONCAT(RESPONSIBILITY_AREA_ID) FROM SM_RESPONSIBILITY_AREA WHERE RESPONSIBILITY_AREA IN ('" + resArea + "')), (SELECT GROUP_CONCAT(CONTACT_INFO) FROM (SELECT USER_NO AS CONTACT_INFO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN ('" + contacts + "') UNION SELECT SUPPLIER_NO AS CONTACT_INFO FROM SUPPLIERS WHERE SUPPLIER_NAME IN ('" + contacts + "') UNION SELECT CONCAT('-', FIELD_ID, 'S') AS CONTACT_INFO FROM FIM_CONTACT_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN ('" + contacts + "')) AS CONTACT),("+stID+"),(SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME IN ('" + groupType + "')), (SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE IN ('" + franAccess + "')), (SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY IN ('" + priority + "')), (SELECT PARENT_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='130320' AND DATA_VALUE IN ('" + criLevel + "')), '" + refParent + "', '"+refFlag+"', '" + refField + "', '"+depFlag+"' ,"+startDate+",('"+startFlag+"'),"+scheduleDate+",('"+scheduleFlag+"'), "+startRem+", "+completionRem+")");
             }
             pst.setString(1, row[0]);
-            if(action.equals("generateTaskSQL")){
+            if(action.equals("generateSecondrySQL")){
                 String queStr = pst.toString();
                 String finalQueStr = queStr.substring(queStr.indexOf(": ")+2, queStr.length());
                 bufferedWriter.write(finalQueStr+";");
@@ -1047,7 +1082,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
         }
     }
     // Generating SQL file
-    else if(action.equals("generateTaskSQL")){
+    else if(action.equals("generateSecondrySQL")){
         bufferedWriter.close();
         writer.close();
     }
