@@ -8,6 +8,8 @@
 <%@ page import="java.util.StringTokenizer"%>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.sql.PreparedStatement"%>
+<%@ page import="java.text.SimpleDateFormat"%>
+<%@ page import="java.util.Date"%>
 <%@ page import="org.apache.commons.fileupload.*"%>
 <%@ page import="org.apache.commons.fileupload.disk.*"%>
 <%@ page import="org.apache.commons.fileupload.servlet.*"%>
@@ -159,9 +161,16 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
         <br>
         <hr>
     <%}else if(action.equals("generateTaskSQL")){
-        String wslPath = System.getProperty("user.home") + "/builddocs/taskAutomationSQL.sql";
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+        String currentDate = dateFormat.format(new Date());
+        String wslPath = System.getProperty("user.home") + "/builddocs/Checklist Automation/taskChecklistSQL_" + currentDate + ".sql";
+        // Create the folder if it doesn't exist
+        File folder = new File(System.getProperty("user.home") + "/builddocs/Checklist Automation");
+        if (!folder.exists()) {
+            folder.mkdirs(); 
+        }
+        // Create the file if it doesn't exist
         myNewFile = new File(wslPath);
-      // Create the file if it doesn't exist
         if (!myNewFile.exists()) {
             myNewFile.createNewFile();
         }
@@ -333,7 +342,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 continue;
             }   
             System.out.println();
-            System.out.println("Line : " + line);
+            System.out.println("Line" + lineCount +": " + line);
             String[] columns = mySplit(line, ',');
             int i = 0;
             String suffix = "";
