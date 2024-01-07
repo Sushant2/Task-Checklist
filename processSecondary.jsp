@@ -308,6 +308,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
         String refField = null;
         String contactNames = null;
         String secondaryName = null;
+        Boolean onlyOnceIfLast = null;
         ArrayList<Integer> orderSave = new ArrayList<Integer>();
         /* Our Column Order Assumption : 
         TASK = 0 RES AREA = 1 CONTACT = 2 STORE = 3 GROUP = 4 FRANCHISEE = 5 PRIORITY = 6 CRITICAL = 7 DEP ON = 8 TIMING = 9 OTHER CHECKLIST = 10 INIT DEP = 11 SCHEDULE_START = 12 SCHEDULE_START_D = 13 SCHEDULE_COMPLETION = 14 SCHEDULE_COMPLETION_D = 15 START_ALERT_DATE = 16 ALERT_DATE = 17 WEB_URL_LINK=18 DESCRIPTION = 19 SECONDRY_CHECKLIST_ID = 20*/
@@ -673,20 +674,31 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 String analyseMessage = "'" + refParent + "' not found in 'Dependent On', we'll add it!";
                                 analyseSet.add(analyseMessage);
                                 analyseSum.put(8, analyseSet);
-                                String findFieldIdQuery = "SELECT FIELD_ID FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME='' LIMIT 1";
+                                String findFieldIdQuery = "SELECT FIELD_ID FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME='' LIMIT 2";
                                 ResultSet rsFFQ = QueryUtil.getResult(findFieldIdQuery, null);
                                 String refFieldId = null;
-                                if (rsFFQ.next())
+                                String refFieldIdLast = null;
+                                if(rsFFQ.next()){
                                     refFieldId = rsFFQ.getString("FIELD_ID");
+                                    if (rsFFQ.next()) {
+                                        refFieldIdLast = rsFFQ.getString("FIELD_ID");
+                                    }
+                                }
 
-                                if (refFieldId != null && !refFieldId.equals("")) {
+                                if(refFieldId != null && refFieldIdLast == null && onlyOnceIfLast == null)
+                                    onlyOnceIfLast = true;
+
+                                if (refFieldId != null && !refFieldId.equals("") && onlyOnceIfLast) {
+                                    //turning onlyOnceIfLast as false
+                                    onlyOnceIfLast = false;
                                     String orderNoQuery = "SELECT MAX(ORDER_NO)+1 AS ORDER_NO FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME!=''";
                                     ResultSet rsON = QueryUtil.getResult(orderNoQuery, null);
                                     String orderNo = null;
                                     if (rsON.next())
                                         orderNo = rsON.getString("ORDER_NO");
                                 
-                                    String updateRefQuery = "UPDATE FO_CUSTOMIZATION_FIELD SET DISPLAY_NAME = ?, DATA_TYPE = 'Date', ORDER_NO = (SELECT FIELD_ID FROM (SELECT FIELD_ID FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME = '' LIMIT 1) AS TMP), AVAILABLE = 0, MILESTONE_APPLICABLE = 'Y' WHERE FIELD_ID = (SELECT COALESCE(MAXNO,1) FROM (SELECT (MAX(ORDER_NO) + 1) AS MAXNO FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME != '') AS TMP)";
+                                    String updateRefQuery = "UPDATE FO_CUSTOMIZATION_FIELD SET DISPLAY_NAME = ?, DATA_TYPE = 'Date', ORDER_NO = (SELECT COALESCE(MAXNO,1) FROM (SELECT (MAX(ORDER_NO) + 1) AS MAXNO FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME != '') AS TMP), AVAILABLE = 0, MILESTONE_APPLICABLE = 'Y' WHERE FIELD_ID = (SELECT FIELD_ID FROM (SELECT FIELD_ID FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME = '' LIMIT 1) AS TMP)";
+                                    
                                     String[] qParams = {refParent};
 
                                     tempQ = con.prepareStatement(updateRefQuery);
