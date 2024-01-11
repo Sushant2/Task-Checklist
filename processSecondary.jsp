@@ -303,16 +303,17 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
         
         String line = null;
         int lineCount = 0;
-        boolean firstLine = true;
+        Boolean firstLine = true;
         String refParent = null;
         String refField = null;
         String contactNames = null;
         String secondaryName = null;
-        Boolean onlyOnceIfLast = null;
         ArrayList<Integer> orderSave = new ArrayList<Integer>();
         /* Our Column Order Assumption : 
         TASK = 0 RES AREA = 1 CONTACT = 2 STORE = 3 GROUP = 4 FRANCHISEE = 5 PRIORITY = 6 CRITICAL = 7 DEP ON = 8 TIMING = 9 OTHER CHECKLIST = 10 INIT DEP = 11 SCHEDULE_START = 12 SCHEDULE_START_D = 13 SCHEDULE_COMPLETION = 14 SCHEDULE_COMPLETION_D = 15 START_ALERT_DATE = 16 ALERT_DATE = 17 WEB_URL_LINK=18 DESCRIPTION = 19 SECONDRY_CHECKLIST_ID = 20*/
         while ((line = input.readLine()) != null) {
+            String franRegiContact = "";
+            Boolean onlyOnceIfLast = null;
             lineCount++;
             if(firstLine){
                 boolean onceSchDays = false, onceSchPrior = false;
@@ -436,6 +437,20 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     else{
                         String[] cols = columns[orderSave.indexOf(2)].split(",");
                         for(String col : cols){
+                            if(col.equals("Regional User") && franRegiContact != ""){
+                                franRegiContact += ", -2";
+                            }
+                            else if(col.equals("Regional User")){
+                                franRegiContact = "-2";
+                            }
+                            else if(col.equals("Franchise User") && franRegiContact != ""){
+                                franRegiContact += ", 0";
+                            }
+                            else if(col.equals("Franchise User")){
+                                franRegiContact = "0";
+                            }
+                        
+                            System.out.println("gbbbbbbbbbbbbb===="  +franRegiContact);
                             col = UpIfLower(col);
                             String que1 = "SELECT USER_NO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN (?)";
                             String que2 = "SELECT SUPPLIER_NO FROM SUPPLIERS WHERE SUPPLIER_NAME IN (?)";
@@ -444,7 +459,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             ResultSet rs1 = QueryUtil.getResult(que1, queryParams);
                             ResultSet rs2 = QueryUtil.getResult(que2, queryParams);
                             ResultSet rs3 = QueryUtil.getResult(que3, queryParams);
-                            if (!rs1.next() && !rs2.next() && !rs3.next()) {
+                            if (!rs1.next() && !rs2.next() && !rs3.next() && !col.equals("Franchise User") && !col.equals("Regional User")) {
                                 String analyseMessage = "'" + col + "' not found in 'Contact(s)', we'll add it!";
                                 analyseSet.add(analyseMessage);
                                 analyseSum.put(2, analyseSet);
@@ -685,10 +700,10 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                     }
                                 }
 
-                                if(refFieldId != null && refFieldIdLast == null && onlyOnceIfLast == null)
+                                if (refFieldId != null && refFieldIdLast == null && onlyOnceIfLast == null)
                                     onlyOnceIfLast = true;
-
-                                if (refFieldId != null && !refFieldId.equals("") && onlyOnceIfLast) {
+                        
+                                if (refFieldId != null && !refFieldId.equals("") && (onlyOnceIfLast == null || onlyOnceIfLast)) {
                                     //turning onlyOnceIfLast as false
                                     onlyOnceIfLast = false;
                                     String orderNoQuery = "SELECT MAX(ORDER_NO)+1 AS ORDER_NO FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME!=''";
@@ -889,6 +904,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 values2 = row[orderSave.indexOf(2)].split(",");
                 contacts= String.join("\',\'", values2);
             }
+            System.out.println("EXTRA CONNNNN -- " + franRegiContact);
             String[] values3 = null;
             String storeNames = null;
             String stID=null;
@@ -1053,15 +1069,15 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
         TASK = 0 RES AREA = 1 CONTACT = 2 STORE = 3 GROUP = 4 FRANCHISEE = 5 PRIORITY = 6 CRITICAL = 7 DEP ON = 8 TIMING = 9 OTHER CHECKLIST = 10 INIT DEP = 11 SCHEDULE_START = 12 SCHEDULE_START_D = 13 SCHEDULE_COMPLETION = 14 SCHEDULE_COMPLETION_D = 15 START_ALERT_DATE = 16 ALERT_DATE = 17 WEB_URL_LINK=18 DESCRIPTION = 19 SECONDRY_CHECKLIST_ID = 20*/
         //CASE 1: ALL COLUMNS ARE PRESENT
             if(orderSave.containsAll(Arrays.asList(12, 13, 14, 15, 16, 17, 18, 19, 20))){
-                pst = con.prepareStatement("INSERT INTO SM_SECONDRY_CHECKLIST (ITEM_NAME, ITEM_ID, RESPONSIBILITY_AREA, CONTACT, ST_ID, GROUP_ID, FRANCHISEE_ACCESS, PRIORITY_ID, CRITICAL_LEVEL_ID, REFERENCE_PARENT, REFERENCE_FLAG, REFERENCE_FIELD, DEPENDENCY_FLAG, START_DATE, START_FLAG, SCHEDULE_DATE, SCHEDULE_FLAG, START_ALERT_DATE, ALERT_DATE, DESCRIPTION, SECONDRY_CHECKLIST_ID, IS_DELETED, WEB_URL_LINK) VALUES (?, NULL, (SELECT GROUP_CONCAT(RESPONSIBILITY_AREA_ID) FROM SM_RESPONSIBILITY_AREA WHERE RESPONSIBILITY_AREA IN ('" + resArea + "')), (SELECT GROUP_CONCAT(CONTACT_INFO) FROM (SELECT USER_NO AS CONTACT_INFO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN ('" + contacts + "') UNION SELECT SUPPLIER_NO AS CONTACT_INFO FROM SUPPLIERS WHERE SUPPLIER_NAME IN ('" + contacts + "') UNION SELECT CONCAT('-', FIELD_ID, 'S') AS CONTACT_INFO FROM FIM_CONTACT_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN ('" + contacts + "')) AS CONTACT),("+stID+"),(SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME IN ('" + groupType + "')), (SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE IN ('" + franAccess + "')), (SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY IN ('" + priority + "')), (SELECT PARENT_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='130320' AND DATA_VALUE IN ('" + criLevel + "')), '" + refParent + "', '"+refFlag+"', " + refField + ", '"+depFlag+"' ,"+startDate+",('"+startFlag+"'),"+scheduleDate+",('"+scheduleFlag+"'), "+startRem+", "+completionRem+", '"+description+"', (SELECT SECONDRY_CHECKLIST_ID FROM SM_SECONDRY_CHECKLIST_TYPE WHERE CHECKLIST_TYPE IN ('" + secondaryName + "')), '"+'N'+"', '"+webUrl+"')");
+                pst = con.prepareStatement("INSERT INTO SM_SECONDRY_CHECKLIST (ITEM_NAME, ITEM_ID, RESPONSIBILITY_AREA, CONTACT, ST_ID, GROUP_ID, FRANCHISEE_ACCESS, PRIORITY_ID, CRITICAL_LEVEL_ID, REFERENCE_PARENT, REFERENCE_FLAG, REFERENCE_FIELD, DEPENDENCY_FLAG, START_DATE, START_FLAG, SCHEDULE_DATE, SCHEDULE_FLAG, START_ALERT_DATE, ALERT_DATE, DESCRIPTION, SECONDRY_CHECKLIST_ID, IS_DELETED, WEB_URL_LINK) VALUES (?, NULL, (SELECT GROUP_CONCAT(RESPONSIBILITY_AREA_ID) FROM SM_RESPONSIBILITY_AREA WHERE RESPONSIBILITY_AREA IN ('" + resArea + "')), (SELECT GROUP_CONCAT(CONTACT_INFO) FROM (SELECT USER_NO AS CONTACT_INFO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN ('" + contacts + "') UNION SELECT SUPPLIER_NO AS CONTACT_INFO FROM SUPPLIERS WHERE SUPPLIER_NAME IN ('" + contacts + "') UNION SELECT CONCAT('-', FIELD_ID, 'S') AS CONTACT_INFO FROM FIM_CONTACT_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN ('" + contacts + "') UNION SELECT ('" + franRegiContact + "') AS CONTACT_INFO) AS subquery),("+stID+"),(SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME IN ('" + groupType + "')), (SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE IN ('" + franAccess + "')), (SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY IN ('" + priority + "')), (SELECT PARENT_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='130320' AND DATA_VALUE IN ('" + criLevel + "')), '" + refParent + "', '"+refFlag+"', " + refField + ", '"+depFlag+"' ,"+startDate+",('"+startFlag+"'),"+scheduleDate+",('"+scheduleFlag+"'), "+startRem+", "+completionRem+", '"+description+"', (SELECT SECONDRY_CHECKLIST_ID FROM SM_SECONDRY_CHECKLIST_TYPE WHERE CHECKLIST_TYPE IN ('" + secondaryName + "')), '"+'N'+"', '"+webUrl+"')");
             }
             //CASE 2: IF NO WEB LINK
             else if(!orderSave.contains(18) && orderSave.containsAll(Arrays.asList(12, 13, 14, 15, 19, 20))){
-                pst = con.prepareStatement("INSERT INTO SM_SECONDRY_CHECKLIST (ITEM_NAME, ITEM_ID, RESPONSIBILITY_AREA, CONTACT, ST_ID, GROUP_ID, FRANCHISEE_ACCESS, PRIORITY_ID, CRITICAL_LEVEL_ID, REFERENCE_PARENT, REFERENCE_FLAG, REFERENCE_FIELD, DEPENDENCY_FLAG, START_DATE, START_FLAG, SCHEDULE_DATE, SCHEDULE_FLAG, START_ALERT_DATE, ALERT_DATE, DESCRIPTION, SECONDRY_CHECKLIST_ID, IS_DELETED) VALUES (?, NULL, (SELECT GROUP_CONCAT(RESPONSIBILITY_AREA_ID) FROM SM_RESPONSIBILITY_AREA WHERE RESPONSIBILITY_AREA IN ('" + resArea + "')), (SELECT GROUP_CONCAT(CONTACT_INFO) FROM (SELECT USER_NO AS CONTACT_INFO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN ('" + contacts + "') UNION SELECT SUPPLIER_NO AS CONTACT_INFO FROM SUPPLIERS WHERE SUPPLIER_NAME IN ('" + contacts + "') UNION SELECT CONCAT('-', FIELD_ID, 'S') AS CONTACT_INFO FROM FIM_CONTACT_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN ('" + contacts + "')) AS CONTACT),("+stID+"),(SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME IN ('" + groupType + "')), (SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE IN ('" + franAccess + "')), (SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY IN ('" + priority + "')), (SELECT PARENT_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='130320' AND DATA_VALUE IN ('" + criLevel + "')), '" + refParent + "', '"+refFlag+"', " + refField + ", '"+depFlag+"' ,"+startDate+",('"+startFlag+"'),"+scheduleDate+",('"+scheduleFlag+"'), "+startRem+", "+completionRem+", '"+description+"', (SELECT SECONDRY_CHECKLIST_ID FROM SM_SECONDRY_CHECKLIST_TYPE WHERE CHECKLIST_TYPE IN ('" + secondaryName + "')), '"+'N'+"')");
+                pst = con.prepareStatement("INSERT INTO SM_SECONDRY_CHECKLIST (ITEM_NAME, ITEM_ID, RESPONSIBILITY_AREA, CONTACT, ST_ID, GROUP_ID, FRANCHISEE_ACCESS, PRIORITY_ID, CRITICAL_LEVEL_ID, REFERENCE_PARENT, REFERENCE_FLAG, REFERENCE_FIELD, DEPENDENCY_FLAG, START_DATE, START_FLAG, SCHEDULE_DATE, SCHEDULE_FLAG, START_ALERT_DATE, ALERT_DATE, DESCRIPTION, SECONDRY_CHECKLIST_ID, IS_DELETED) VALUES (?, NULL, (SELECT GROUP_CONCAT(RESPONSIBILITY_AREA_ID) FROM SM_RESPONSIBILITY_AREA WHERE RESPONSIBILITY_AREA IN ('" + resArea + "')), (SELECT GROUP_CONCAT(CONTACT_INFO) FROM (SELECT USER_NO AS CONTACT_INFO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN ('" + contacts + "') UNION SELECT SUPPLIER_NO AS CONTACT_INFO FROM SUPPLIERS WHERE SUPPLIER_NAME IN ('" + contacts + "') UNION SELECT CONCAT('-', FIELD_ID, 'S') AS CONTACT_INFO FROM FIM_CONTACT_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN ('" + contacts + "') UNION SELECT ('" + franRegiContact + "') AS CONTACT_INFO) AS subquery),("+stID+"),(SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME IN ('" + groupType + "')), (SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE IN ('" + franAccess + "')), (SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY IN ('" + priority + "')), (SELECT PARENT_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='130320' AND DATA_VALUE IN ('" + criLevel + "')), '" + refParent + "', '"+refFlag+"', " + refField + ", '"+depFlag+"' ,"+startDate+",('"+startFlag+"'),"+scheduleDate+",('"+scheduleFlag+"'), "+startRem+", "+completionRem+", '"+description+"', (SELECT SECONDRY_CHECKLIST_ID FROM SM_SECONDRY_CHECKLIST_TYPE WHERE CHECKLIST_TYPE IN ('" + secondaryName + "')), '"+'N'+"')");
             }
             // CASE3: If no reminder present
             else if(orderSave.containsAll(Arrays.asList(12, 13, 14, 15, 16, 17, 18, 19, 20))){
-                pst = con.prepareStatement("INSERT INTO SM_SECONDRY_CHECKLIST (ITEM_NAME, ITEM_ID, RESPONSIBILITY_AREA, CONTACT, ST_ID, GROUP_ID, FRANCHISEE_ACCESS, PRIORITY_ID, CRITICAL_LEVEL_ID, REFERENCE_PARENT, REFERENCE_FLAG, REFERENCE_FIELD, DEPENDENCY_FLAG, START_DATE, START_FLAG, SCHEDULE_DATE, SCHEDULE_FLAG, DESCRIPTION, SECONDRY_CHECKLIST_ID, IS_DELETED) VALUES (?, NULL, (SELECT GROUP_CONCAT(RESPONSIBILITY_AREA_ID) FROM SM_RESPONSIBILITY_AREA WHERE RESPONSIBILITY_AREA IN ('" + resArea + "')), (SELECT GROUP_CONCAT(CONTACT_INFO) FROM (SELECT USER_NO AS CONTACT_INFO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN ('" + contacts + "') UNION SELECT SUPPLIER_NO AS CONTACT_INFO FROM SUPPLIERS WHERE SUPPLIER_NAME IN ('" + contacts + "') UNION SELECT CONCAT('-', FIELD_ID, 'S') AS CONTACT_INFO FROM FIM_CONTACT_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN ('" + contacts + "')) AS CONTACT),("+stID+"),(SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME IN ('" + groupType + "')), (SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE IN ('" + franAccess + "')), (SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY IN ('" + priority + "')), (SELECT PARENT_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='130320' AND DATA_VALUE IN ('" + criLevel + "')), '" + refParent + "', '"+refFlag+"', " + refField + ", '"+depFlag+"' ,"+startDate+",('"+startFlag+"'),"+scheduleDate+",('"+scheduleFlag+"'), '"+description+"', (SELECT SECONDRY_CHECKLIST_ID FROM SM_SECONDRY_CHECKLIST_TYPE WHERE CHECKLIST_TYPE IN ('" + secondaryName + "')), '"+'N'+"')");
+                pst = con.prepareStatement("INSERT INTO SM_SECONDRY_CHECKLIST (ITEM_NAME, ITEM_ID, RESPONSIBILITY_AREA, CONTACT, ST_ID, GROUP_ID, FRANCHISEE_ACCESS, PRIORITY_ID, CRITICAL_LEVEL_ID, REFERENCE_PARENT, REFERENCE_FLAG, REFERENCE_FIELD, DEPENDENCY_FLAG, START_DATE, START_FLAG, SCHEDULE_DATE, SCHEDULE_FLAG, DESCRIPTION, SECONDRY_CHECKLIST_ID, IS_DELETED) VALUES (?, NULL, (SELECT GROUP_CONCAT(RESPONSIBILITY_AREA_ID) FROM SM_RESPONSIBILITY_AREA WHERE RESPONSIBILITY_AREA IN ('" + resArea + "')), (SELECT GROUP_CONCAT(CONTACT_INFO) FROM (SELECT USER_NO AS CONTACT_INFO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN ('" + contacts + "') UNION SELECT SUPPLIER_NO AS CONTACT_INFO FROM SUPPLIERS WHERE SUPPLIER_NAME IN ('" + contacts + "') UNION SELECT CONCAT('-', FIELD_ID, 'S') AS CONTACT_INFO FROM FIM_CONTACT_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN ('" + contacts + "') UNION SELECT ('" + franRegiContact + "') AS CONTACT_INFO) AS subquery),("+stID+"),(SELECT GROUP_ID FROM CHECKLIST_GROUPS WHERE GROUP_NAME IN ('" + groupType + "')), (SELECT MASTER_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='8102' AND DATA_VALUE IN ('" + franAccess + "')), (SELECT PRIORITY_ID FROM SM_CHECKLIST_ITEMS_PRIORITY WHERE PRIORITY IN ('" + priority + "')), (SELECT PARENT_DATA_ID FROM MASTER_DATA WHERE DATA_TYPE='130320' AND DATA_VALUE IN ('" + criLevel + "')), '" + refParent + "', '"+refFlag+"', " + refField + ", '"+depFlag+"' ,"+startDate+",('"+startFlag+"'),"+scheduleDate+",('"+scheduleFlag+"'), '"+description+"', (SELECT SECONDRY_CHECKLIST_ID FROM SM_SECONDRY_CHECKLIST_TYPE WHERE CHECKLIST_TYPE IN ('" + secondaryName + "')), '"+'N'+"')");
             }
             pst.setString(1, row[1]);
             if(action.equals("generateSecondrySQL")){
