@@ -138,6 +138,10 @@
             <li>Convert your Checklist Sheet into CSV Format for compatibility.</li>
             <li>Ensure only a single row containing Column Names is present.</li>
             <li>Ensure that Checklist Sheet does not contain completely empty rows.</li>
+            <li>Replace double quotes("") with single('') in Task/Item column.</li>
+            <li>Replace (/) with (,).<br>
+            <i>For example- Replace (Yes/No) as (Yes, No).</i>
+            </li>
             <li>Remove unnecessary column(s).</li>
         </div>
     </div>    

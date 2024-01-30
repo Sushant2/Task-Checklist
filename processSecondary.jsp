@@ -450,7 +450,6 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 franRegiContact = "0";
                             }
                         
-                            System.out.println("gbbbbbbbbbbbbb===="  +franRegiContact);
                             col = UpIfLower(col);
                             String que1 = "SELECT USER_NO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN (?)";
                             String que2 = "SELECT SUPPLIER_NO FROM SUPPLIERS WHERE SUPPLIER_NAME IN (?)";
@@ -680,7 +679,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             analyseSet.add(analyseMessage);
                             analyseSum.put(8, analyseSet);
                         }
-                        else if (refParent.indexOf("Multiple") == -1 || refParent.indexOf("Task") == -1|| refParent.indexOf("Equipment") == -1 || refParent.indexOf("Document") == -1 || refParent.indexOf("Picture") == -1 || refParent.indexOf("Secondary") == -1) {
+                        else if (refParent.indexOf("Multiple") == -1 && refParent.indexOf("Task") == -1 && refParent.indexOf("Equipment") == -1 && refParent.indexOf("Document") == -1 && refParent.indexOf("Picture") == -1 && refParent.indexOf("Secondary") == -1) {
                             refParent = UpIfLower(refParent);
                             String que = "SELECT FIELD_ID FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN (?)";
                             String[] queParams = { refParent };
@@ -772,11 +771,11 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 }
                             }
                         }
-                        else if(refParent.indexOf("Multiple") != -1 && refParent.equalsIgnoreCase("Multiple Checklist")){
+                        else if(refParent.indexOf("Multiple") != -1 || refParent.equalsIgnoreCase("Multiple Checklist")){
                             refParent = "MULTIPLE_CHECKLIST";
                             refField = "";
                         }
-                        else if(refParent.indexOf("Task") != -1 && refParent.equalsIgnoreCase("Task Checklist")){
+                        else if(refParent.indexOf("Task") != -1 || refParent.equalsIgnoreCase("Task Checklist")){
                             refParent = "TASK_CHECKLIST";
                             if(refField.equals("")){
                                 String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
@@ -790,7 +789,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                     refField = "'" + rs.getString("TASK_ID") + "'";
                             }
                         }
-                        else if(refParent.indexOf("Equipment") != -1 && refParent.equalsIgnoreCase("Equipment Checklist")){
+                        else if(refParent.indexOf("Equipment") != -1 || refParent.equalsIgnoreCase("Equipment Checklist")){
                             refParent = "EQUIPMENT_CHECKLIST";
                             if(refField.equals("")){
                                 String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
@@ -803,7 +802,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                     refField = "'" +  rs.getString("EQUIPMENT_ID") + "'";
                             }
                         }
-                        else if(refParent.indexOf("Document") != -1 && refParent.equalsIgnoreCase("Document Checklist")){
+                        else if(refParent.indexOf("Document") != -1 || refParent.equalsIgnoreCase("Document Checklist")){
                             refParent = "DOCUMENT_CHECKLIST";
                             if(refField.equals("")){
                                 String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
@@ -817,7 +816,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                     refField = "'" + rs.getString("DOCUMENT_ID") + "'";
                             }
                         }
-                        else if(refParent.indexOf("Picture") != -1 && refParent.equalsIgnoreCase("Picture Checklist")){
+                        else if(refParent.indexOf("Picture") != -1 || refParent.equalsIgnoreCase("Picture Checklist")){
                             refParent = "PICTURE_CHECKLIST";
                             if(refField.equals("")){
                                 String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
@@ -831,7 +830,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                     refField = "'" + rs.getString("PICTURE_ID") + "'";
                             }
                         }
-                        else if(refParent.indexOf("Secondary") != -1 && refParent.equalsIgnoreCase("Secondary Checklist")){
+                        else if(refParent.indexOf("Secondary") != -1 || refParent.equalsIgnoreCase("Secondary Checklist")){
                             refParent = "SECONDRY_CHECKLIST";
                             if(refField.equals("")){
                                 String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
@@ -904,7 +903,6 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 values2 = row[orderSave.indexOf(2)].split(",");
                 contacts= String.join("\',\'", values2);
             }
-            System.out.println("EXTRA CONNNNN -- " + franRegiContact);
             String[] values3 = null;
             String storeNames = null;
             String stID=null;
