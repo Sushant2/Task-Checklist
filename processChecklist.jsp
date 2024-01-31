@@ -276,11 +276,35 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
         List<String[]> data = new ArrayList<>();
         BufferedReader input = new BufferedReader(new FileReader(saveFile));
         Class.forName("com.mysql.jdbc.Driver");
-        con = DriverManager.getConnection("jdbc:mysql://10.2.179.20/Sports_Clip_SushantDB?user=sterling&password=sterling");
+
+        Properties prop = new Properties();
+        InputStream inputBuildProps = null;
+
+        try {
+            String buildPropsPath = getServletContext().getRealPath("WEB-INF/mvnForumHome/build.properties");
+            inputBuildProps = new FileInputStream(buildPropsPath);
+            prop.load(inputBuildProps);
+            String databaseName = prop.getProperty("sushant.db");
+            String dbServer = prop.getProperty("dbServer");
+            String[] serverParts = dbServer.split(":");
+            String host = serverParts[0];
+            System.out.println("jdbc:mysql://" + host + "/" + databaseName + "?user=sterling&password=sterling");
+            con = DriverManager.getConnection("jdbc:mysql://" + host + "/" + databaseName + "?user=sterling&password=sterling");
+        } catch (IOException | SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (inputBuildProps != null) {
+                try {
+                    inputBuildProps.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
         
         String line = null;
         int lineCount = 0;
-        boolean firstLine = true;
+        Boolean firstLine = true;
         String refParent = null;
         String refField = null;
         String contactNames = null;
@@ -288,6 +312,8 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
         /* Our Column Order Assumption : 
         TASK = 0 RES AREA = 1 CONTACT = 2 STORE = 3 GROUP = 4 FRANCHISEE = 5 PRIORITY = 6 CRITICAL = 7 DEP ON = 8 TIMING = 9 OTHER CHECKLIST = 10 INIT DEP = 11 SCHEDULE_START = 12 SCHEDULE_START_D = 13 SCHEDULE_COMPLETION = 14 SCHEDULE_COMPLETION_D = 15 START_ALERT_DATE = 16 ALERT_DATE = 17 WEB_URL_LINK=18*/
         while ((line = input.readLine()) != null) {
+            String franRegiContact = "";
+            Boolean onlyOnceIfLast = null;
             lineCount++;
             if(firstLine){
                 boolean onceSchDays = false, onceSchPrior = false;
@@ -340,7 +366,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                 }
                 firstLine = false;
                 continue;
-            }   
+            }
             System.out.println();
             System.out.println("Line" + lineCount +": " + line);
             String[] columns = mySplit(line, ',');
@@ -405,6 +431,19 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                     else{
                         String[] cols = columns[orderSave.indexOf(2)].split(",");
                         for(String col : cols){
+                            if(col.equals("Regional User") && franRegiContact != ""){
+                                franRegiContact += ", -2";
+                            }
+                            else if(col.equals("Regional User")){
+                                franRegiContact = "-2";
+                            }
+                            else if(col.equals("Franchise User") && franRegiContact != ""){
+                                franRegiContact += ", 0";
+                            }
+                            else if(col.equals("Franchise User")){
+                                franRegiContact = "0";
+                            }
+
                             col = UpIfLower(col);
                             String que1 = "SELECT USER_NO FROM USERS WHERE CONCAT(USER_FIRST_NAME, ' ', USER_LAST_NAME) IN (?)";
                             String que2 = "SELECT SUPPLIER_NO FROM SUPPLIERS WHERE SUPPLIER_NAME IN (?)";
@@ -413,7 +452,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             ResultSet rs1 = QueryUtil.getResult(que1, queryParams);
                             ResultSet rs2 = QueryUtil.getResult(que2, queryParams);
                             ResultSet rs3 = QueryUtil.getResult(que3, queryParams);
-                            if (!rs1.next() && !rs2.next() && !rs3.next()) {
+                            if (!rs1.next() && !rs2.next() && !rs3.next() && !col.equals("Franchise User") && !col.equals("Regional User")) {
                                 String analyseMessage = "'" + col + "' not found in 'Contact(s)', we'll add it!";
                                 analyseSet.add(analyseMessage);
                                 analyseSum.put(2, analyseSet);
@@ -634,7 +673,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             analyseSet.add(analyseMessage);
                             analyseSum.put(8, analyseSet);
                         }
-                        else if (!refParent.equals("")) {
+                        else if (refParent.indexOf("Multiple") == -1 && refParent.indexOf("Task") == -1 && refParent.indexOf("Equipment") == -1 && refParent.indexOf("Document") == -1 && refParent.indexOf("Picture") == -1 && refParent.indexOf("Secondary") == -1 && refParent.indexOf("Opening Date") == -1) {
                             refParent = UpIfLower(refParent);
                             String que = "SELECT FIELD_ID FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN (?)";
                             String[] queParams = { refParent };
@@ -643,26 +682,35 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 String analyseMessage = "'" + refParent + "' not found in 'Dependent On', we'll add it!";
                                 analyseSet.add(analyseMessage);
                                 analyseSum.put(8, analyseSet);
-                                String findFieldIdQuery = "SELECT FIELD_ID FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME='' LIMIT 1";
+                                String findFieldIdQuery = "SELECT FIELD_ID FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME='' LIMIT 2";
                                 ResultSet rsFFQ = QueryUtil.getResult(findFieldIdQuery, null);
                                 String refFieldId = null;
-                                if (rsFFQ.next())
+                                String refFieldIdLast = null;
+                                if(rsFFQ.next()){
                                     refFieldId = rsFFQ.getString("FIELD_ID");
+                                    if (rsFFQ.next()) {
+                                        refFieldIdLast = rsFFQ.getString("FIELD_ID");
+                                    }
+                                }
 
-                                if (refFieldId != null && !refFieldId.equals("")) {
+                                if (refFieldId != null && refFieldIdLast == null && onlyOnceIfLast == null)
+                                    onlyOnceIfLast = true;
+                        
+                                if (refFieldId != null && !refFieldId.equals("") && (onlyOnceIfLast == null || onlyOnceIfLast)) {
+                                    //turning onlyOnceIfLast as false
+                                    onlyOnceIfLast = false;
                                     String orderNoQuery = "SELECT MAX(ORDER_NO)+1 AS ORDER_NO FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME!=''";
                                     ResultSet rsON = QueryUtil.getResult(orderNoQuery, null);
                                     String orderNo = null;
                                     if (rsON.next())
                                         orderNo = rsON.getString("ORDER_NO");
                                 
-                                    String updateRefQuery = "UPDATE FO_CUSTOMIZATION_FIELD SET DISPLAY_NAME=?, DATA_TYPE='Date', ORDER_NO=?, AVAILABLE=0, MILESTONE_APPLICABLE='Y' WHERE FIELD_ID=?";
-                                    String[] qParams = {refParent, orderNo, refFieldId};
+                                    String updateRefQuery = "UPDATE FO_CUSTOMIZATION_FIELD SET DISPLAY_NAME = ?, DATA_TYPE = 'Date', ORDER_NO = (SELECT COALESCE(MAXNO,1) FROM (SELECT (MAX(ORDER_NO) + 1) AS MAXNO FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME != '') AS TMP), AVAILABLE = 0, MILESTONE_APPLICABLE = 'Y' WHERE FIELD_ID = (SELECT FIELD_ID FROM (SELECT FIELD_ID FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME = '' LIMIT 1) AS TMP)";
                                     
+                                    String[] qParams = {refParent};
+
                                     tempQ = con.prepareStatement(updateRefQuery);
                                     tempQ.setString(1, refParent);
-                                    tempQ.setString(2, orderNo);
-                                    tempQ.setString(3, refFieldId);
                                     String queStr = tempQ.toString();
                                     String finalQueStr = queStr.substring(queStr.indexOf(": ") + 2, queStr.length());
                                     
@@ -674,6 +722,13 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                         sqlQuery.add(refParent);
                                     }
                                     // QueryUtil.update(q, qParams);
+                                    String refParentQ = "SELECT CONCAT('FO_CUSTOM_FIELD_C', FIELD_ID) AS NEW_FIELD FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN (?)";
+                                    tempQ = con.prepareStatement(refParentQ);
+                                    tempQ.setString(1, String.valueOf(refParent));
+                                    String strQ = tempQ.toString();
+                                    String strQFinal = strQ.substring(strQ.indexOf(": ")+2, strQ.length());
+                                    refField = "("+strQFinal+")";
+                                    refParent = null;
                                 }
                                 else{
                                     String q = "INSERT INTO FO_CUSTOMIZATION_FIELD (DISPLAY_NAME, DATA_TYPE, FIELD_NO, ORDER_NO, EXPORTABLE, SEARCHABLE, AVAILABLE) VALUES(?, 'Date', (SELECT nextFieldNo FROM (SELECT MAX(FIELD_NO) + 1 AS nextFieldNo FROM FO_CUSTOMIZATION_FIELD) AS table1), (SELECT nextOrderNo FROM (SELECT MAX(ORDER_NO) + 1 AS nextOrderNo FROM FO_CUSTOMIZATION_FIELD) AS table1), 1, 1, 0)";
@@ -690,21 +745,31 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                         sqlQuery.add(refParent);
                                     }
                                     // QueryUtil.update(q, qParams);
+
+                                    String refParentQuery = "SELECT CONCAT('FO_CUSTOM_FIELD_C', FIELD_ID) AS NEW_FIELD FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN (?)";
+                                    String[] refParentQueryParams = { refParent };
+                                    ResultSet res = QueryUtil.getResult(refParentQuery, refParentQueryParams);
+                                    if (res.next()){
+                                        refField = "'" + res.getString("NEW_FIELD") + "'"; //FO_CUSTOM_FIELD_C...
+                                        refParent = null;
+                                    }
                                 }
                             }
-                            String refParentQuery = "SELECT CONCAT('FO_CUSTOM_FIELD_C', FIELD_ID) AS NEW_FIELD FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN (?)";
-                            String[] refParentQueryParams = { refParent };
-                            ResultSet res = QueryUtil.getResult(refParentQuery, refParentQueryParams);
-                            if (res.next()){
-                                refField = res.getString("NEW_FIELD"); //FO_CUSTOM_FIELD_C...
-                                refParent = null;
+                            else{
+                                String refParentQuery = "SELECT CONCAT('FO_CUSTOM_FIELD_C', FIELD_ID) AS NEW_FIELD FROM FO_CUSTOMIZATION_FIELD WHERE DISPLAY_NAME IN (?)";
+                                String[] refParentQueryParams = { refParent };
+                                ResultSet res = QueryUtil.getResult(refParentQuery, refParentQueryParams);
+                                if (res.next()){
+                                    refField = "'" + res.getString("NEW_FIELD") + "'"; //FO_CUSTOM_FIELD_C...
+                                    refParent = null;
+                                }
                             }
                         }
-                        else if(refParent.indexOf("Multiple") != -1 && refParent.equalsIgnoreCase("Multiple Checklist")){
+                        else if(refParent.indexOf("Multiple") != -1 || refParent.equalsIgnoreCase("Multiple Checklist")){
                             refParent = "MULTIPLE_CHECKLIST";
                             refField = "";
                         }
-                        else if(refParent.indexOf("Task") != -1 && refParent.equalsIgnoreCase("Task Checklist")){
+                        else if(refParent.indexOf("Task") != -1 || refParent.equalsIgnoreCase("Task Checklist")){
                             refParent = "TASK_CHECKLIST";
                             if(refField.equals("")){
                                 String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
@@ -715,10 +780,10 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 String que = "SELECT TASK_ID FROM SM_TASK_CHECKLIST WHERE TASK LIKE '%" + refField + "%'";
                                 ResultSet rs = QueryUtil.getResult(que, null);
                                 if(rs.next())
-                                    refField = rs.getString("TASK_ID");
+                                    refField = "'" + rs.getString("TASK_ID") + "'";
                             }
                         }
-                        else if(refParent.indexOf("Equipment") != -1 && refParent.equalsIgnoreCase("Equipment Checklist")){
+                        else if(refParent.indexOf("Equipment") != -1 || refParent.equalsIgnoreCase("Equipment Checklist")){
                             refParent = "EQUIPMENT_CHECKLIST";
                             if(refField.equals("")){
                                 String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
@@ -728,10 +793,10 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 String que = "SELECT EQUIPMENT_ID FROM SM_EQUIPMENT_CHECKLIST WHERE EQUIPMENT_NAME LIKE '%" + refField + "%'";
                                 ResultSet rs = QueryUtil.getResult(que, null);
                                 if(rs.next())
-                                    refField = rs.getString("EQUIPMENT_ID");
+                                    refField = "'" +  rs.getString("EQUIPMENT_ID") + "'";
                             }
                         }
-                        else if(refParent.indexOf("Document") != -1 && refParent.equalsIgnoreCase("Document Checklist")){
+                        else if(refParent.indexOf("Document") != -1 || refParent.equalsIgnoreCase("Document Checklist")){
                             refParent = "DOCUMENT_CHECKLIST";
                             if(refField.equals("")){
                                 String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
@@ -742,10 +807,10 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 String que = "SELECT DOCUMENT_ID FROM SM_DOCUMENT_CHECKLIST WHERE DOCUMENT_NAME LIKE '%" + refField + "%'";
                                 ResultSet rs = QueryUtil.getResult(que, null);
                                 if(rs.next())
-                                    refField = rs.getString("DOCUMENT_ID");
+                                    refField = "'" + rs.getString("DOCUMENT_ID") + "'";
                             }
                         }
-                        else if(refParent.indexOf("Picture") != -1 && refParent.equalsIgnoreCase("Picture Checklist")){
+                        else if(refParent.indexOf("Picture") != -1 || refParent.equalsIgnoreCase("Picture Checklist")){
                             refParent = "PICTURE_CHECKLIST";
                             if(refField.equals("")){
                                 String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
@@ -756,10 +821,10 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 String que = "SELECT PICTURE_ID FROM SM_PICTURE_CHECKLIST WHERE TITLE LIKE '%" + refField + "%'";
                                 ResultSet rs = QueryUtil.getResult(que, null);
                                 if(rs.next())
-                                    refField = rs.getString("PICTURE_ID");
+                                    refField = "'" + rs.getString("PICTURE_ID") + "'";
                             }
                         }
-                        else if(refParent.indexOf("Secondary") != -1 && refParent.equalsIgnoreCase("Secondary Checklist")){
+                        else if(refParent.indexOf("Secondary") != -1 || refParent.equalsIgnoreCase("Secondary Checklist")){
                             refParent = "SECONDRY_CHECKLIST";
                             if(refField.equals("")){
                                 String analyseMessage = "Note: Empty value for 'Other Checklist tasks' in " + lineCount + suffix + " row, Please mention it!";
@@ -770,12 +835,12 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                                 String que = "SELECT ITEM_ID FROM SM_SECONDRY_CHECKLIST WHERE ITEM_NAME LIKE '%" + refField + "%'";
                                 ResultSet rs = QueryUtil.getResult(que, null);
                                 if(rs.next())
-                                    refField = rs.getString("ITEM_ID");
+                                    refField = "'" + rs.getString("ITEM_ID") + "'";
                             }
                         }
                         else {
                             refParent = null;
-                            refField = "GRAND_STORE_OPENING_DATE";
+                            refField = "'GRAND_STORE_OPENING_DATE'";
                         }
                     }
                 }
