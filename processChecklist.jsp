@@ -440,7 +440,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             else if((col.equals("Franchise User") || col.equals("Franchisee User")) && franRegiContact != ""){
                                 franRegiContact += ", 0";
                             }
-                            else if(col.equals("Franchise User")){
+                            else if(col.equals("Franchise User") || col.equals("Franchisee User")){
                                 franRegiContact = "0";
                             }
 
