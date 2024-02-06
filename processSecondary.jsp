@@ -443,7 +443,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             else if(col.equals("Regional User")){
                                 franRegiContact = "-2";
                             }
-                            else if(col.equals("Franchise User") && franRegiContact != ""){
+                            else if((col.equals("Franchise User") || col.equals("Franchisee User")) && franRegiContact != ""){
                                 franRegiContact += ", 0";
                             }
                             else if(col.equals("Franchise User")){
@@ -1046,10 +1046,12 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                         analyseSet.add(analyseMessage);
                         analyseSum.put(17, analyseSet);
                     }
-                }else{
-                    startRem = "-1";
-                    completionRem = "-1";
                 }
+
+                if(startRem == "" || startRem.equals("NULL"))
+                    startRem = "-1";
+                if(completionRem == "" || completionRem.equals("NULL"))
+                    completionRem = "-1";
             }
             String webUrl = null;
             if(orderSave.indexOf(18) != -1){
