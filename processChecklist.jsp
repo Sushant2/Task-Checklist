@@ -452,7 +452,7 @@ if ((contentType != null) && (contentType.indexOf("multipart/form-data") >= 0)) 
                             ResultSet rs1 = QueryUtil.getResult(que1, queryParams);
                             ResultSet rs2 = QueryUtil.getResult(que2, queryParams);
                             ResultSet rs3 = QueryUtil.getResult(que3, queryParams);
-                            if (!rs1.next() && !rs2.next() && !rs3.next() && !col.equals("Franchise User") && !col.equals("Regional User")) {
+                            if (!rs1.next() && !rs2.next() && !rs3.next() && !col.equals("Franchise User") && !col.equals("Franchisee User") && !col.equals("Regional User")) {
                                 String analyseMessage = "'" + col + "' not found in 'Contact(s)', we'll add it!";
                                 analyseSet.add(analyseMessage);
                                 analyseSum.put(2, analyseSet);
